@@ -1,10 +1,10 @@
 # Project-level configuration.
-cmake_minimum_required(VERSION 3.14)
-project(tren10 LANGUAGES CXX)
+cmake_minimum_required(VERSION 3.25...3.30)  # 3.30 yerine 3.25 yapın
+project(meydan_train_manager LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "tren10")
+set(BINARY_NAME "meydan_train_manager")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.
@@ -28,7 +28,7 @@ set(CMAKE_EXE_LINKER_FLAGS_PROFILE "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 set(CMAKE_SHARED_LINKER_FLAGS_PROFILE "${CMAKE_SHARED_LINKER_FLAGS_RELEASE}")
 set(CMAKE_C_FLAGS_PROFILE "${CMAKE_C_FLAGS_RELEASE}")
 set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
-
+set(CMAKE_GENERATOR_TOOLSET "v143" CACHE INTERNAL "") # MSVC v143 toolset
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
 

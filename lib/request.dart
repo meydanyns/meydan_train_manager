@@ -1,8 +1,9 @@
-
 import 'package:flutter/material.dart';
+import 'package:tren/models/lokomotif.dart';
 import 'package:tren/models/station.dart';
+import 'package:tren/models/vagon.dart';
 import 'package:tren/services/route_services.dart';
-import 'package:tren/widget/station_selector.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 
 class TrainRequestDialog extends StatefulWidget {
   const TrainRequestDialog({super.key});
@@ -14,40 +15,58 @@ class TrainRequestDialog extends StatefulWidget {
 class _TrainRequestDialogState extends State<TrainRequestDialog> {
   Station? startStation;
   Station? endStation;
-  String? selectedLoko;
-  String? selectedVagon;
-  int lokoAdet = 0;
-  int vagonAdet = 0;
+  List<LokomotifSelection> lokomotifSelections = [];
+  List<VagonSelection> vagonSelections = [];
 
-  final List<String> lokoResimler = [
-    'lib/assets/lokomotifler/loko.png',
-    'lib/assets/lokomotifler/train4.png',
-    'lib/assets/lokomotifler/lde11000.png',
-    'lib/assets/lokomotifler/lde18000.png',
-    'lib/assets/lokomotifler/lde22000.png',
-    'lib/assets/lokomotifler/lde24000.png',
-    'lib/assets/lokomotifler/lde33000.png',
-    'lib/assets/lokomotifler/lde36000.png',
-    'lib/assets/lokomotifler/le68000.png',
-  ];
-
-  final List<String> vagonResimler = [
-    'lib/assets/vagonlar/vagon1.png',
-    'lib/assets/vagonlar/vagon2.png',
-    'lib/assets/vagonlar/vagon3.png',
-    'lib/assets/vagonlar/vagon4.png',
-  ];
-
-  void _onStartStationSelected(Station? station) {
-    setState(() {
-      startStation = station;
-    });
+  @override
+  void initState() {
+    super.initState();
+    // Mevcut listelerin kopyalarını oluştur
+    lokomotifSelections = lokoListesi
+        .map((loko) => LokomotifSelection(
+            loko: loko.copyWith(), selectedCount: 0)) // ✅ copyWith
+        .toList();
+    vagonSelections = vagonListesi
+        .map((vagon) => VagonSelection(
+            vagon: vagon.copyWith(), selectedCount: 0)) // ✅ copyWith
+        .toList();
   }
 
-  void _onEndStationSelected(Station? station) {
-    setState(() {
-      endStation = station;
-    });
+  int get totalGuc => lokomotifSelections.fold(0,
+      (sum, selection) => sum + (selection.selectedCount * selection.loko.guc));
+
+  int get totalKapasite => vagonSelections.fold(
+      0,
+      (sum, selection) =>
+          sum + (selection.selectedCount * selection.vagon.kapasite));
+
+  Widget buildStationSelector({
+    required String hint,
+    required Station? selectedStation,
+    required Function(Station?) onStationSelected,
+  }) {
+    return DropdownSearch<Station>(
+      items: RouteService.graph.keys.toList(),
+      selectedItem: selectedStation,
+      onChanged: onStationSelected,
+      dropdownDecoratorProps: DropDownDecoratorProps(
+        dropdownSearchDecoration: InputDecoration(
+          labelText: hint,
+          border: OutlineInputBorder(),
+        ),
+      ),
+      popupProps: PopupProps.menu(
+        showSearchBox: true,
+        searchFieldProps: TextFieldProps(
+          decoration: InputDecoration(hintText: "İstasyon Ara..."),
+        ),
+        itemBuilder: (context, item, isSelected) => ListTile(
+          title: Text(item.name),
+        ),
+      ),
+      compareFn: (item1, item2) => item1.name == item2.name,
+      itemAsString: (station) => station.name,
+    );
   }
 
   @override
@@ -57,174 +76,215 @@ class _TrainRequestDialogState extends State<TrainRequestDialog> {
       content: SingleChildScrollView(
         child: Column(
           children: [
-            StationSelector(
-              stations: RouteService.graph.keys.toList(),
-              onStationSelected: _onStartStationSelected,
+            // StationSelector(
+            //   stations: RouteService.graph.keys.toList(),
+            //   onStationSelected: (station) =>
+            //       setState(() => startStation = station),
+            //   hint: 'Çıkış İstasyonu Seçin',
+            //   selectedStation: startStation,
+            // ),
+            // StationSelector(
+            //   stations: RouteService.graph.keys.toList(),
+            //   onStationSelected: (station) =>
+            //       setState(() => endStation = station),
+            //   hint: 'Varış İstasyonu Seçin',
+            //   selectedStation: endStation,
+            // ),
+            buildStationSelector(
               hint: 'Çıkış İstasyonu Seçin',
+              onStationSelected: (station) =>
+                  setState(() => startStation = station),
               selectedStation: startStation,
             ),
-            const SizedBox(height: 10),
-            StationSelector(
-              stations: RouteService.graph.keys.toList(),
-              onStationSelected: _onEndStationSelected,
+            SizedBox(height: 20),
+            buildStationSelector(
               hint: 'Varış İstasyonu Seçin',
               selectedStation: endStation,
+              onStationSelected: (station) =>
+                  setState(() => endStation = station),
             ),
-            const SizedBox(height: 10),
-            DropdownButton<String>(
-              hint: const Text("Lokomotif Seç"),
-              value: selectedLoko,
-              isExpanded: true,
-              items: lokoResimler.map((String filePath) {
-                return DropdownMenuItem<String>(
-                  value: filePath,
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        filePath,
-                        width: 100,
-                        height: 45,
-                        fit: BoxFit.contain,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        filePath.split('/').last.split('.').first,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedLoko = value;
-                });
-              },
-            ),
-            const SizedBox(height: 10),
-            DropdownButton<String>(
-              hint: const Text("Vagon Seç"),
-              value: selectedVagon,
-              isExpanded: true,
-              items: vagonResimler.map((String filePath) {
-                return DropdownMenuItem<String>(
-                  value: filePath,
-                  child: Row(
-                    children: [
-                      Image.asset(
-                        filePath,
-                        width: 20,
-                        height: 20,
-                        fit: BoxFit.cover,
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        filePath.split('/').last.split('.').first,
-                        style: const TextStyle(fontSize: 16),
-                      ),
-                    ],
-                  ),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  selectedVagon = value;
-                });
-              },
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Column(
-                  children: [
-                    OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          lokoAdet++;
-                        });
-                      },
-                      child: const Icon(Icons.plus_one),
-                    ),
-                    Text("$lokoAdet"),
-                    const Text("Lokomotif"),
-                    OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          if (lokoAdet > 0) {
-                            lokoAdet--;
-                          }
-                        });
-                      },
-                      child: const Icon(Icons.exposure_minus_1),
-                    ),
-                  ],
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  children: [
-                    OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          vagonAdet++;
-                        });
-                      },
-                      child: const Icon(Icons.plus_one),
-                    ),
-                    Text("$vagonAdet"),
-                    const Text("Vagon"),
-                    OutlinedButton(
-                      onPressed: () {
-                        setState(() {
-                          if (vagonAdet > 0) {
-                            vagonAdet--;
-                          }
-                        });
-                      },
-                      child: const Icon(Icons.exposure_minus_1),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+            const SizedBox(height: 20),
+            const Text('Lokomotif Seçimi', style: TextStyle(fontSize: 18)),
+            ...lokomotifSelections.map(_buildLokomotifRow),
+            Text('Toplam Güç: $totalGuc HP',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            const Text('Vagon Seçimi', style: TextStyle(fontSize: 18)),
+            ...vagonSelections.map(_buildVagonRow),
+            Text('Toplam Kapasite: $totalKapasite TON',
+                style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
       ),
       actions: [
         TextButton(
-          onPressed: () {
-            Navigator.of(context).pop();
-          },
+          onPressed: () => Navigator.pop(context),
           child: const Text('İptal'),
         ),
         TextButton(
-          onPressed: () {
-            if (startStation != null &&
-                endStation != null &&
-                selectedLoko != null &&
-                selectedVagon != null) {
-              Navigator.of(context).pop({
-                'startStation': startStation,
-                'endStation': endStation,
-                'selectedLoko': selectedLoko,
-                'selectedVagon': selectedVagon,
-                'lokoAdet': lokoAdet,
-                'vagonAdet': vagonAdet,
-              });
-              print(
-                "Vagon Resmi Boyutu: ${Image.asset(selectedVagon!).width} x ${Image.asset(selectedVagon!).height}",
-              );
-              print(
-                "Lokomotif Resmi Boyutu: ${Image.asset(selectedLoko!).width} x ${Image.asset(selectedLoko!).height}",
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Lütfen tüm alanları doldurun!')),
-              );
-            }
-          },
+          onPressed: () => _onSubmit(),
           child: const Text('Tamam'),
-        ),
+        )
       ],
     );
   }
+
+  Widget _buildLokomotifRow(LokomotifSelection selection) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Image.asset(selection.loko.resim, width: 60, height: 60),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(selection.loko.tip,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('Stok: ${selection.loko.adet}'),
+              Text('Güç: ${selection.loko.guc} HP'),
+            ],
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline),
+            onPressed: () => _updateLokomotifCount(selection, -1),
+          ),
+          Text('${selection.selectedCount}',
+              style: const TextStyle(fontSize: 16)),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: () => _updateLokomotifCount(selection, 1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVagonRow(VagonSelection selection) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Image.asset(selection.vagon.resim, width: 60, height: 60),
+          const SizedBox(width: 10),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(selection.vagon.tip,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text('Stok: ${selection.vagon.adet}'),
+              Text('Kapasite: ${selection.vagon.kapasite} TON'),
+            ],
+          ),
+          const Spacer(),
+          IconButton(
+            icon: const Icon(Icons.remove_circle_outline),
+            onPressed: () => _updateVagonCount(selection, -1),
+          ),
+          Text('${selection.selectedCount}',
+              style: const TextStyle(fontSize: 16)),
+          IconButton(
+            icon: const Icon(Icons.add_circle_outline),
+            onPressed: () => _updateVagonCount(selection, 1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _updateLokomotifCount(LokomotifSelection selection, int delta) {
+    final newCount = selection.selectedCount + delta;
+
+    // Stok kontrolü (adet değişmez!)
+    if (newCount >= 0 && newCount <= selection.loko.adet) {
+      setState(() {
+        selection.selectedCount = newCount; // Sadece selectedCount güncellenir
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Stokta yeterli lokomotif yok!")),
+      );
+    }
+  }
+
+  void _updateVagonCount(VagonSelection selection, int delta) {
+    final newCount = selection.selectedCount + delta;
+
+    // Stok kontrolü (adet değişmez!)
+    if (newCount >= 0 && newCount <= selection.vagon.adet) {
+      setState(() {
+        selection.selectedCount = newCount; // Sadece selectedCount güncellenir
+      });
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Stokta yeterli vagon yok!")),
+      );
+    }
+  }
+
+  void _onSubmit() {
+    final selectedLokomotifler = lokomotifSelections
+        .where((s) => s.selectedCount > 0)
+        .map((s) => s.loko.copyWith(selectedCount: s.selectedCount))
+        .toList();
+    // Lokomotif stok kontrolü
+    for (var lokoSelection in lokomotifSelections) {
+      if (lokoSelection.selectedCount > lokoSelection.loko.adet) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${lokoSelection.loko.tip} stok yetersiz!")),
+        );
+        return;
+      }
+    }
+    final selectedVagonlar = vagonSelections
+        .where((s) => s.selectedCount > 0)
+        .map((s) => s.vagon.copyWith(selectedCount: s.selectedCount))
+        .toList();
+
+    // Vagon stok kontrolü
+    for (var vagonSelection in vagonSelections) {
+      if (vagonSelection.selectedCount > vagonSelection.vagon.adet) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("${vagonSelection.vagon.tip} stok yetersiz!")),
+        );
+        return;
+      }
+    }
+
+    if (selectedLokomotifler.isEmpty || selectedVagonlar.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('En az 1 lokomotif ve 1 vagon seçmelisiniz!')),
+      );
+      return;
+    }
+
+    Navigator.pop(context, {
+      'startStation': startStation,
+      'endStation': endStation,
+      'lokomotifler': selectedLokomotifler,
+      'vagonlar': selectedVagonlar,
+    });
+  }
+}
+
+class LokomotifSelection {
+  Lokomotif loko;
+  int selectedCount;
+
+  LokomotifSelection({
+    required this.loko,
+    this.selectedCount = 0,
+  });
+}
+
+class VagonSelection {
+  Vagon vagon;
+  int selectedCount;
+
+  VagonSelection({
+    required this.vagon,
+    this.selectedCount = 0,
+  });
 }

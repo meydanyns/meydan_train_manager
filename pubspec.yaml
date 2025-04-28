@@ -31,15 +31,34 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  google_maps_flutter: ^2.2.0
+  http: ^1.1.0 # Güncel sürüm
+  flutter_map: ^8.1.1  
+  google_maps_flutter: ^2.2.3
   flutter_plugin_android_lifecycle: ^2.0.7
-  http: ^0.13.6
-  intl: ^0.17.0
-  rxdart: ^0.28.0
+
+  geolocator: ^14.0.0 # Güncel sürüm
+  async: ^2.12.0
+  fake_async: ^1.3.2
+  leak_tracker: ^10.0.8
+  rxdart: ^0.27.7
+ 
+  material_color_utilities: ^0.11.1 # 0.12.0 yerine bu sürümü kullanın
+  vector_math: ^2.1.4
+  flutter_bloc: ^9.1.0
+  intl: ^0.20.2  # Güncel sürüm
+  
+  dropdown_search: ^5.0.6 #hem arama hemde dropdown için kullanılıyor 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   provider: ^6.1.2
+  audioplayers: 6.4.0
+  
+  
+  
+  
+  
+ 
 
 dev_dependencies:
   flutter_test:
@@ -50,7 +69,7 @@ dev_dependencies:
   # activated in the `analysis_options.yaml` file located at the root of your
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
-  flutter_lints: ^4.0.0
+  flutter_lints: ^5.0.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -66,8 +85,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
    
-    - lib/assets/lokomotifler/loko.png
-    - lib/assets/lokomotifler/train4.png  
+   
     - lib/assets/lokomotifler/lde11000.png
     - lib/assets/lokomotifler/lde18000.png
     - lib/assets/lokomotifler/lde22000.png
@@ -76,15 +94,19 @@ flutter:
     - lib/assets/lokomotifler/lde36000.png
     - lib/assets/lokomotifler/le68000.png
     - lib/assets/lokomotifler/E43000.png
-    - lib/assets/vagonlar/vagon1.png 
-    - lib/assets/vagonlar/vagon2.png 
-    - lib/assets/vagonlar/vagon3.png 
-    - lib/assets/vagonlar/vagon4.png 
-    - lib/assets/vagonlar/vagon.png 
+  
+
     - lib/assets/circle_black.png
     - lib/assets/circle_red.png    
     - lib/assets/train_icon.png
-
+    - lib/assets/trees/    
+    - lib/assets/clouds/
+    - lib/assets/station.png   
+    - lib/assets/ray.png   
+    - lib/assets/manzara.jpg   
+    - lib/assets/lokomotifler/
+    - lib/assets/vagonlar/
+    - lib/assets/sounds/trenses.mp3
     
   #   - images/a_dot_ham.jpeg
 

@@ -1,46 +1,53 @@
+// vagon.dart
 class Vagon {
+  final String id;
   final String tip;
-  final int adet;
+  final int adet; // Stok adedi (sabit)
   final int kapasite;
-  final int bakim;
   final String resim;
+  int selectedCount; // Seçilen adet
 
   Vagon({
+    required this.id,
     required this.tip,
     required this.adet,
     required this.kapasite,
-    required this.bakim,
     required this.resim,
+    this.selectedCount = 0,
   });
+
+  Vagon copyWith({int? selectedCount}) {
+    return Vagon(
+      id: id,
+      tip: tip,
+      adet: adet,
+      kapasite: kapasite,
+      resim: resim,
+      selectedCount: selectedCount ?? this.selectedCount,
+    );
+  }
 }
 
 List<Vagon> vagonListesi = [
   Vagon(
+    id: '1',
     tip: 'E',
-    adet: 4,
+    adet: 14,
     kapasite: 20,
-    bakim: 100,
-    resim: 'lib/assets/vagonlar/vagon1.png',
+    resim: 'lib/assets/vagonlar/Eamnoss.png',
   ),
   Vagon(
-    tip: 'F',
-    adet: 4,
+    id: '3',
+    tip: 'K',
+    adet: 44,
     kapasite: 20,
-    bakim: 100,
-    resim: 'lib/assets/vagonlar/vagon2.png',
+    resim: 'lib/assets/vagonlar/Ksw.png',
   ),
   Vagon(
-    tip: 'S',
-    adet: 4,
-    kapasite: 20,
-    bakim: 100,
-    resim: 'lib/assets/vagonlar/vagon3.png',
-  ),
-  Vagon(
+    id: '4',
     tip: 'Z',
-    adet: 4,
+    adet: 54,
     kapasite: 20,
-    bakim: 100,
-    resim: 'lib/assets/vagonlar/vagon1.png',
+    resim: 'lib/assets/vagonlar/Zacess.png',
   ),
 ];

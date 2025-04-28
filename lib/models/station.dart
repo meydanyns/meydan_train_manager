@@ -22,6 +22,8 @@ class Station {
 
   void get position {}
 
+  void get location => null;
+
   // toString metodu ekleyelim (debug için kullanışlıdır)
   @override
   String toString() => name;

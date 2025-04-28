@@ -1,4 +1,6 @@
 import '../models/station.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'dart:math';
 
 class RouteService {
   // İstasyonlar arasındaki bağlantıları temsil eden graf
@@ -8,10 +10,20 @@ class RouteService {
   static List<List<Station>> routes = [
     // Hat1: Ankara -> Elmadağ -> Kırıkkale -> Yerköy -> Kayseri
     [
-      Station(name: 'Ankara', latitude: 39.9334, longitude: 32.8597),
+      Station(name: 'Ankara', latitude: 39.935913, longitude: 32.843087),
+      Station(name: 'Mamak', latitude: 39.931543, longitude: 32.911814),
+      Station(name: 'Kayaş', latitude: 39.913458, longitude: 32.965430),
+      Station(name: 'Lalahan', latitude: 39.970639, longitude: 33.117394),
+      Station(name: 'Lalabel', latitude: 39.958773, longitude: 33.190856),
       Station(name: 'Elmadağ', latitude: 39.923602, longitude: 33.227082),
+      Station(name: 'Kurbağalı', latitude: 39.944146, longitude: 33.297462),
+      Station(name: 'Kılıçlar', latitude: 39.900025, longitude: 33.321871),
       Station(name: 'Irmak', latitude: 39.932176, longitude: 33.390066),
+      Station(name: 'Yahşihan', latitude: 39.845620, longitude: 33.447170),
       Station(name: 'Kırıkkale', latitude: 39.8468, longitude: 33.5153),
+      Station(name: 'Mahmutlar', latitude: 39.859390, longitude: 33.605176),
+      Station(name: 'Balışıh', latitude: 39.909650, longitude: 33.718703),
+      Station(name: 'İzzettin', latitude: 39.910153, longitude: 33.839005),
       Station(name: 'Çerikli', latitude: 39.894057, longitude: 34.000020),
       Station(name: 'Yerköy', latitude: 39.6381, longitude: 34.4672),
       Station(name: 'Şefaatlı', latitude: 39.498176, longitude: 34.750182),
@@ -19,14 +31,21 @@ class RouteService {
       Station(name: 'Boğazköprü', latitude: 38.755541, longitude: 35.323168),
       Station(name: 'Kayseri', latitude: 38.7227, longitude: 35.4875),
     ],
-
+// ırmak zonguldak hattı
     [
       Station(name: 'Irmak', latitude: 39.932176, longitude: 33.390066),
       Station(name: 'kalecik', latitude: 40.076937, longitude: 33.445308),
+      Station(name: 'Alibey', latitude: 40.193444, longitude: 33.568764),
+      Station(name: 'Tüney', latitude: 40.355882, longitude: 33.529197),
+      Station(name: 'Germece', latitude: 40.405165, longitude: 33.677511),
       Station(name: 'Çankırı', latitude: 40.596688, longitude: 33.613588),
       Station(name: 'Güllüce', latitude: 40.814777, longitude: 33.407231),
+      Station(name: 'Kurşunlu', latitude: 40.844297, longitude: 33.261692),
+      Station(name: 'Çerkeş', latitude: 40.811154, longitude: 32.884729),
       Station(name: 'ismetpaşa', latitude: 40.877024, longitude: 32.610454),
       Station(name: 'Karabük', latitude: 41.195139, longitude: 32.614644),
+      Station(name: 'Bolkuş', latitude: 41.160668, longitude: 32.517103),
+      Station(name: 'Kayadibi', latitude: 41.236262, longitude: 32.202398),
       Station(name: 'Gökçebey', latitude: 41.306737, longitude: 32.139270),
       Station(name: 'Çaycuma', latitude: 41.423603, longitude: 32.095513),
       Station(name: 'Filyos', latitude: 41.560591, longitude: 32.022957),
@@ -36,12 +55,35 @@ class RouteService {
     [
       Station(name: 'Kayseri', latitude: 38.7227, longitude: 35.4875),
       Station(name: 'Boğazköprü', latitude: 38.755541, longitude: 35.323168),
+      Station(name: 'İncasu', latitude: 38.629169, longitude: 35.196711),
+      Station(name: 'Akköy', latitude: 38.338022, longitude: 35.035953),
       Station(name: 'Araplı', latitude: 38.257759, longitude: 35.105827),
       Station(name: 'Niğde', latitude: 37.9667, longitude: 34.6833),
+      Station(name: 'Bor', latitude: 37.9667, longitude: 34.6833),
+      Station(name: 'Altay', latitude: 37.667062, longitude: 34.463712),
       Station(name: 'Ulukışla', latitude: 37.5458, longitude: 34.4814),
+    ],
+    // ulukışla  yenice hattı
+    [
+      Station(name: 'Ulukışla', latitude: 37.5458, longitude: 34.4814),
+      Station(name: 'Çiftehan', latitude: 37.511764, longitude: 34.772988),
       Station(name: 'Pozantı', latitude: 37.434096, longitude: 34.875823),
-      Station(name: 'Yenice', latitude: 37.0000, longitude: 35.0000),
-      Station(name: 'Adana', latitude: 37.0000, longitude: 35.3213),
+      Station(name: 'Belemedik', latitude: 37.354927, longitude: 34.910560),
+      Station(name: 'Hacıkırı', latitude: 37.252374, longitude: 34.980812),
+      Station(name: 'Durak', latitude: 37.154200, longitude: 34.976418),
+      Station(name: 'Yenice', latitude: 36.974851, longitude: 35.056166),
+    ],
+    //   yenice- toprakkale hattı
+    [
+      Station(name: 'Yenice', latitude: 36.974851, longitude: 35.056166),
+      Station(name: 'Şehitlik', latitude: 36.997665, longitude: 35.241685),
+      Station(name: 'Şakirpaşa', latitude: 36.996222, longitude: 35.290073),
+      Station(name: 'Adana', latitude: 37.005864, longitude: 35.327816),
+      Station(name: 'İncirlik', latitude: 36.983804, longitude: 35.437142),
+      Station(name: 'Yakapınar', latitude: 36.967896, longitude: 35.612699),
+      Station(name: 'Ceyhan', latitude: 37.018240, longitude: 35.817877),
+      Station(name: 'Günyazı', latitude: 37.057455, longitude: 35.952719),
+      Station(name: 'Toprakkale', latitude: 37.066547, longitude: 36.145709),
     ],
     // Hat3: Kayseri -> Sarıoğlan -> Şarkışla -> Kalın -> Sivas
     [
@@ -55,13 +97,17 @@ class RouteService {
     [
       Station(name: 'Kalın', latitude: 39.691856, longitude: 36.759933),
       Station(name: 'Yıldızeli', latitude: 39.867235, longitude: 36.592980),
+      Station(name: 'Yeşilyurt', latitude: 40.007734, longitude: 36.219490),
       Station(name: 'Artova', latitude: 40.113522, longitude: 36.300422),
+      Station(name: 'Yıldıztepe', latitude: 40.161917, longitude: 35.930900),
+      Station(name: 'Zile', latitude: 40.281907, longitude: 35.931507),
       Station(name: 'Turhal', latitude: 40.388996, longitude: 36.078212),
+      Station(name: 'Kızılca', latitude: 40.515884, longitude: 35.761050),
       Station(name: 'Amasya', latitude: 40.664820, longitude: 35.832671),
       Station(name: 'Havza', latitude: 40.9667, longitude: 35.6667),
       Station(name: 'Samsun', latitude: 41.2867, longitude: 36.3300),
     ],
-    // Hat5: Sivas - Malatya Hattı
+    // Hat5: Kalın - Çetinkaya Hattı
     [
       Station(name: 'Kalın', latitude: 39.691856, longitude: 36.759933),
       Station(name: 'Sivas', latitude: 39.7500, longitude: 37.0167),
@@ -69,11 +115,18 @@ class RouteService {
       Station(name: 'Kangal', latitude: 39.246117, longitude: 37.385248),
       Station(name: 'Çetinkaya', latitude: 39.248143, longitude: 37.603290),
     ],
+    // Çetinkaya-Malatya
     [
       Station(name: 'Çetinkaya', latitude: 39.248143, longitude: 37.603290),
-      Station(name: 'Akgedik', latitude: 39.049543, longitude: 37.717367),
+      Station(name: 'Demiriz', latitude: 39.159911, longitude: 37.693466),
+      Station(name: 'Akçamağara', latitude: 39.099788, longitude: 37.734980),
+      Station(name: 'Akgedik', latitude: 39.050251, longitude: 37.716262),
+      Station(name: 'Ulugüney', latitude: 39.049543, longitude: 37.717367),
+      Station(name: 'Hasançelebi', latitude: 38.953102, longitude: 37.891710),
       Station(name: 'Hekimhan', latitude: 38.814712, longitude: 37.932057),
-      Station(name: 'Yazıhan', latitude: 38.597574, longitude: 38.181731),
+      Station(name: 'Kesikköprü', latitude: 38.710769, longitude: 38.011108),
+      Station(name: 'Kesikköprü', latitude: 38.710769, longitude: 38.011108),
+      Station(name: 'Sarsap', latitude: 38.668379, longitude: 38.134948),
       Station(name: 'Dilek', latitude: 38.445432, longitude: 38.257564),
       Station(name: 'Malatya', latitude: 38.353104, longitude: 38.280001),
     ],
@@ -104,19 +157,27 @@ class RouteService {
       Station(name: 'Malatya', latitude: 38.353104, longitude: 38.280001),
       Station(name: 'Battalgazi', latitude: 38.433688, longitude: 38.373347),
       Station(name: 'Fırat', latitude: 38.439861, longitude: 38.517386),
+      Station(name: 'Gemici D.', latitude: 38.457912, longitude: 38.599458),
       Station(name: 'Kuşsarayı', latitude: 38.452646, longitude: 38.682229),
       Station(name: 'Pınarlı', latitude: 38.472427, longitude: 38.775734),
       Station(name: 'Baskil', latitude: 38.565293, longitude: 38.821961),
+      Station(name: 'Şefkat', latitude: 38.573350, longitude: 38.899928),
       Station(name: 'Yolçatı', latitude: 38.542425, longitude: 39.035854),
     ],
+
     // Hat7:  Yolçatı-Diyarbakır Hattı
     [
       Station(name: 'Yolçatı', latitude: 38.542425, longitude: 39.035854),
+      Station(name: 'Uluova', latitude: 38.492251, longitude: 39.200514),
       Station(name: 'Kürk', latitude: 38.462477, longitude: 39.273505),
       Station(name: 'Sivrice', latitude: 38.447684, longitude: 39.308336),
+      Station(name: 'Gölcük', latitude: 38.462395, longitude: 39.391419),
       Station(name: 'Gezin', latitude: 38.494556, longitude: 39.520681),
       Station(name: 'Maden', latitude: 38.401386, longitude: 39.670002),
+      Station(name: 'Sallar', latitude: 38.275725, longitude: 39.678257),
       Station(name: 'Ergani', latitude: 38.231549, longitude: 39.756625),
+      Station(name: 'Geyik', latitude: 38.143899, longitude: 39.936359),
+      Station(name: 'Leylek', latitude: 38.021235, longitude: 40.084260),
       Station(name: 'Diyarbakır', latitude: 37.911923, longitude: 40.214684),
     ],
 
@@ -136,8 +197,12 @@ class RouteService {
 
     // Hat7:  Ankara-Eskişehir Hattı
     [
-      Station(name: 'Ankara', latitude: 39.7500, longitude: 37.0167),
+      Station(name: 'Ankara', latitude: 39.935913, longitude: 32.843087),
+      Station(name: 'Hipodrom', latitude: 39.945721, longitude: 32.825070),
+      Station(name: 'Marşandiz', latitude: 39.932125, longitude: 32.769071),
+      Station(name: 'Etimesgut', latitude: 39.949086, longitude: 32.663447),
       Station(name: 'Sincan', latitude: 39.968395, longitude: 32.574392),
+      Station(name: 'Malıköy', latitude: 39.784650, longitude: 32.386977),
       Station(name: 'Polatlı', latitude: 39.582493, longitude: 32.134314),
       Station(name: 'Yunus Emre', latitude: 39.697339, longitude: 31.481758),
       Station(name: 'Alpu', latitude: 39.769238, longitude: 30.952086),
@@ -172,7 +237,16 @@ class RouteService {
       Station(name: 'Mezitler', latitude: 39.549503, longitude: 28.306446),
       Station(name: 'Balıkesir', latitude: 39.646883, longitude: 27.889984),
     ],
-
+    //  balıkesir -İzmir
+    [
+      Station(name: 'Balıkesir', latitude: 39.646883, longitude: 27.889984),
+      Station(name: 'Soma', latitude: 39.195541, longitude: 27.629509),
+      Station(name: 'Akhisar', latitude: 38.908251, longitude: 27.790766),
+      Station(name: 'Manisa', latitude: 38.621469, longitude: 27.435501),
+      Station(name: 'Menemen', latitude: 38.603168, longitude: 27.076219),
+      Station(name: 'İzmir', latitude: 38.438025, longitude: 27.149003),
+    ],
+// alayunt-afyon
     [
       Station(name: 'Alayunt', latitude: 39.394175, longitude: 30.104651),
       Station(name: 'Çöğürler', latitude: 39.267675, longitude: 30.178262),
@@ -182,17 +256,30 @@ class RouteService {
       Station(name: 'Gazlıgöl', latitude: 38.933407, longitude: 30.501379),
       Station(name: 'Afyon', latitude: 38.763163, longitude: 30.553595),
     ],
+    // afyon-dinar
+    [
+      Station(name: 'Afyon', latitude: 38.763163, longitude: 30.553595),
+      Station(name: 'Tınaztepe', latitude: 38.744793, longitude: 30.384943),
+      Station(name: 'Kocatepe', latitude: 38.673658, longitude: 30.324952),
+      Station(name: 'Çiğiltepe', latitude: 38.596180, longitude: 30.265687),
+      Station(name: 'Sandıklı', latitude: 38.458021, longitude: 30.260927),
+      Station(name: 'Kazanpınar', latitude: 38.193134, longitude: 30.196677),
+      Station(name: 'Dinar', latitude: 38.062272, longitude: 30.155311),
+    ],
     // Hat8:  Yolçatı-Tatvan Hattı
     [
       Station(name: 'Yolçatı', latitude: 38.542425, longitude: 39.035854),
-      Station(name: 'Elazığ', latitude: 38.668751, longitude: 39.218168),
-      Station(name: 'Çağlar', latitude: 38.588742, longitude: 39.391820),
-      Station(name: 'Muratbağı', latitude: 38.651899, longitude: 39.774346),
-      Station(name: 'Palu', latitude: 38.689091, longitude: 39.929666),
-      Station(name: 'Genç', latitude: 38.750164, longitude: 40.560434),
-      Station(name: 'Oymapınar', latitude: 38.866146, longitude: 40.966280),
-      Station(name: 'Muş', latitude: 38.748488, longitude: 41.505457),
-      Station(name: 'Tatvan', latitude: 38.512469, longitude: 42.277926),
+      Station(name: 'Elazığ', latitude: 38.665103, longitude: 39.222883),
+      Station(name: 'Yurt', latitude: 38.636423, longitude: 39.357111),
+      Station(name: 'Çağlar', latitude: 38.587752, longitude: 39.362924),
+      Station(name: 'Muratbağı', latitude: 38.654485, longitude: 39.781094),
+      Station(name: 'Palu', latitude: 38.690948, longitude: 39.926142),
+      Station(name: 'Genç', latitude: 38.751475, longitude: 40.556416),
+      Station(name: 'Oymapınar', latitude: 38.858741, longitude: 40.970740),
+      Station(name: 'kurt', latitude: 38.834572, longitude: 41.269777),
+      Station(name: 'Muş', latitude: 38.761917, longitude: 41.510827),
+      Station(name: 'Sıcaksu', latitude: 38.649758, longitude: 42.144171),
+      Station(name: 'Tatvan', latitude: 38.507060, longitude: 42.276269),
     ],
 
     [
@@ -272,5 +359,21 @@ class RouteService {
 
     // Rota bulunamazsa boş liste döndür
     return [];
+  }
+}
+
+class RouteServiceHelper {
+  static double calculateDistance(LatLng p1, LatLng p2) {
+    const R = 6371e3; // Dünya yarıçapı (metre)
+    double phi1 = p1.latitude * pi / 180;
+    double phi2 = p2.latitude * pi / 180;
+    double deltaPhi = (p2.latitude - p1.latitude) * pi / 180;
+    double deltaLambda = (p2.longitude - p1.longitude) * pi / 180;
+
+    double a = sin(deltaPhi / 2) * sin(deltaPhi / 2) +
+        cos(phi1) * cos(phi2) * sin(deltaLambda / 2) * sin(deltaLambda / 2);
+    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+
+    return R * c;
   }
 }

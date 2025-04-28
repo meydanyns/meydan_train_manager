@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
+class RouteMap extends StatefulWidget {
+  const RouteMap({super.key});
 
   @override
-  _MapScreenState createState() => _MapScreenState();
+  RouteMapState createState() => RouteMapState();
 }
 
-class _MapScreenState extends State<MapScreen> {
+class RouteMapState extends State<RouteMap> {
   late GoogleMapController mapController;
   final LatLng _center = const LatLng(39.9334, 32.8597); // Ankara
   Set<Marker> markers = {};
