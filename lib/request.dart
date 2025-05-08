@@ -76,20 +76,6 @@ class _TrainRequestDialogState extends State<TrainRequestDialog> {
       content: SingleChildScrollView(
         child: Column(
           children: [
-            // StationSelector(
-            //   stations: RouteService.graph.keys.toList(),
-            //   onStationSelected: (station) =>
-            //       setState(() => startStation = station),
-            //   hint: 'Çıkış İstasyonu Seçin',
-            //   selectedStation: startStation,
-            // ),
-            // StationSelector(
-            //   stations: RouteService.graph.keys.toList(),
-            //   onStationSelected: (station) =>
-            //       setState(() => endStation = station),
-            //   hint: 'Varış İstasyonu Seçin',
-            //   selectedStation: endStation,
-            // ),
             buildStationSelector(
               hint: 'Çıkış İstasyonu Seçin',
               onStationSelected: (station) =>

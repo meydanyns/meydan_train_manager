@@ -1,16 +1,14 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 
 class RayAnimationWidget extends StatefulWidget {
+  final int routeId;
   final bool isActive;
   final double speed;
-  final int routeId;
-
   const RayAnimationWidget({
     super.key,
+    required this.routeId,
     required this.isActive,
     required this.speed,
-    required this.routeId,
   });
 
   @override
@@ -27,10 +25,9 @@ class _RayAnimationWidgetState extends State<RayAnimationWidget>
   @override
   void initState() {
     super.initState();
-
     _controller = AnimationController(
       vsync: this,
-      duration: Duration(milliseconds: (1000 / _baseSpeed).toInt()),
+      duration: Duration(seconds: 1),
     )..repeat();
   }
 
@@ -40,7 +37,8 @@ class _RayAnimationWidgetState extends State<RayAnimationWidget>
 
     if (widget.speed != oldWidget.speed) {
       _baseSpeed = widget.speed.clamp(0.5, 5.0);
-      _controller.duration = Duration(seconds: (4 / _baseSpeed).toInt());
+      _controller.duration =
+          Duration(milliseconds: (4000 / _baseSpeed).toInt());
     }
 
     if (widget.isActive != oldWidget.isActive) {
@@ -78,7 +76,8 @@ class _RayAnimationWidgetState extends State<RayAnimationWidget>
             // Hareketli ray katmanı
             Positioned(
               bottom: 0,
-              left: -(_controller.value * MediaQuery.of(context).size.width),
+              left: -(_controller.value * 1000), // örneğin 100px'lik bir loop
+
               right: 0,
               child: SizedBox(
                 height: _rayHeight,

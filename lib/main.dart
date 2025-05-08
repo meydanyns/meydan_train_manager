@@ -17,6 +17,8 @@ import 'services/route_services.dart';
 import 'models/station.dart';
 import 'package:flutter/foundation.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:intl/intl.dart';
+// main.dart ve diğer dosyaların başına ekle:
 
 void main() {
   runApp(const MyApp());
@@ -55,6 +57,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Set<Polyline> polylines = {};
   LatLng trainPosition = const LatLng(39.9334, 32.8597);
 
+  int _activeRouteId = -1;
   int lokoAdet = 0; // Lokomotif sayısı
   int vagonAdet = 0; // Vagon sayısı
   int kasa = 1000; // Başlangıç kasası
@@ -101,7 +104,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   Stream<List<LatLng>> get combinedPositionStream {
     return CombineLatestStream.list(
       _routes.values.map((route) => route.positionStream),
-    ).map((listOfLists) => listOfLists.expand((x) => x).toList());
+    ).map((listOfLists) =>
+        listOfLists.expand((x) => x as Iterable<LatLng>).toList());
   }
 
   List<String> lokoResimler = [
@@ -137,18 +141,28 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       builder: (BuildContext context) => const TrainRequestDialog(),
     );
 
-    if (result != null) {
-      final selectedLokomotifler = result['lokomotifler'] as List<Lokomotif>;
-      final selectedVagonlar = result['vagonlar'] as List<Vagon>;
+    // Dialog'dan dönen veriyi doğru şekilde işle
+    if (result != null && result is Map<String, dynamic>) {
+      // Anahtarları doğru isimlerle al
+      final List<Lokomotif> selectedLokomotifler =
+          result['lokomotifler'] as List<Lokomotif>;
+      final List<Vagon> selectedVagonlar = result['vagonlar'] as List<Vagon>;
+      final Station? startStation = result['startStation'] as Station?;
+      final Station? endStation = result['endStation'] as Station?;
 
+      // Gerekli kontrolleri yap
+      if (startStation == null || endStation == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Lütfen istasyon seçin!')),
+        );
+        return;
+      }
+
+      // Rota oluşturma işlemini başlat
       setState(() {
-        startStation = result['startStation'] as Station?;
-        endStation = result['endStation'] as Station?;
-
-        // Seçilen lokomotif ve vagon listelerini işle
         _calculateRoute(
-          startStation: startStation!,
-          endStation: endStation!,
+          startStation: startStation,
+          endStation: endStation,
           lokomotifler: selectedLokomotifler,
           vagonlar: selectedVagonlar,
         );
@@ -161,13 +175,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     super.initState();
     RouteService.initializeGraph();
     _loadIcons();
-    final throttledStream = CombineLatestStream.list(
-      _routeStreamControllers.values.map((c) => c.stream),
-    ).throttleTime(const Duration(milliseconds: 100));
-
-    throttledStream.listen((trainPositions) {
-      debugPrint("Train Positions: $trainPositions");
-    });
+    // _treeController = AnimationController(
+    //   // ✅ Var olan kodu koruyun
+    //   vsync: this,
+    //   duration: const Duration(seconds: 1),
+    // )..repeat();
   }
 
   @override
@@ -263,44 +275,50 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           itemBuilder: (context, index) {
                             Lokomotif lokomotif = lokoListesi[index];
                             return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 3.0),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Column(
-                                    children: [
-                                      Text(
-                                        lokomotif.tip,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Image.asset(
-                                        lokomotif.resim,
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 3.0),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Column(
                                       children: [
-                                        Text('Loko Tipi: ${lokomotif.tip}'),
-                                        Text('Adet: ${lokomotif.adet}'),
-                                        Text('Hız: ${lokomotif.hiz} KM'),
-                                        Text('Bakım: ${lokomotif.guc} %'),
+                                        Text(
+                                          lokomotif.tip,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Image.asset(
+                                          lokomotif.resim,
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.contain,
+                                        ),
                                       ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                            );
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Loko Tipi: ${lokomotif.tip}'),
+                                          Text('Adet: ${lokomotif.adet}'),
+                                          Text('Hız: ${lokomotif.hiz} KM'),
+                                        ],
+                                      ),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        // Buraya satın al butonu tıklanınca olacak işlemi yazarsın
+                                        debugPrint(
+                                            '${lokomotif.tip} satın alındı');
+                                      },
+                                      child: const Text('SATIN AL'),
+                                    ),
+                                  ],
+                                ));
                           },
                         ),
                         ListView.builder(
@@ -309,43 +327,49 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           itemBuilder: (context, index) {
                             Vagon vagon = vagonListesi[index];
                             return Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 3.0),
-                              child: Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Column(
-                                    children: [
-                                      Text(
-                                        vagon.tip,
-                                        style: const TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                      Image.asset(
-                                        vagon.resim,
-                                        width: 50,
-                                        height: 50,
-                                        fit: BoxFit.contain,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(width: 10),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 3.0),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Column(
                                       children: [
-                                        Text('Adet: ${vagon.adet}'),
                                         Text(
-                                            'Kapasite: ${vagon.kapasite.toString()} TON'),
+                                          vagon.tip,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        Image.asset(
+                                          vagon.resim,
+                                          width: 50,
+                                          height: 50,
+                                          fit: BoxFit.contain,
+                                        ),
                                       ],
                                     ),
-                                  ),
-                                ],
-                              ),
-                            );
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text('Adet: ${vagon.adet}'),
+                                          Text(
+                                              'Kapasite: ${vagon.kapasite.toString()} TON'),
+                                        ],
+                                      ),
+                                    ),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        // Buraya satın al butonu tıklanınca olacak işlemi yazarsın
+                                        debugPrint('${vagon.tip} satın alındı');
+                                      },
+                                      child: const Text('SATIN AL'),
+                                    ),
+                                  ],
+                                ));
                           },
                         ),
                       ],
@@ -357,7 +381,15 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             actions: [
               TextButton(
                 onPressed: () {
-                  Navigator.pop(context);
+                  // _onSubmit metodunun sonunda:
+                  Navigator.pop(context, {
+                    'startStation': startStation,
+                    'endStation': endStation,
+                    'lokomotifler':
+                        [], // Define an empty list or replace with the correct variable
+                    'vagonlar':
+                        [], // Define an empty list or replace with the correct variable
+                  });
                 },
                 child: const Text('Kapat'),
               ),
@@ -366,28 +398,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         );
       },
     );
-  }
-
-  void _pauseTrainAnimation(int routeId) {
-    final routeData = _routes[routeId];
-    routeData?.pause();
-    routeData?.pauseAnimations();
-    setState(() {});
-  }
-
-// gerçek uzaklık hesaplama fonksiyonu
-  static double calculateDistance(LatLng p1, LatLng p2) {
-    const R = 6371e3; // Earth radius in meters
-    double phi1 = p1.latitude * pi / 180;
-    double phi2 = p2.latitude * pi / 180;
-    double deltaPhi = (p2.latitude - p1.latitude) * pi / 180;
-    double deltaLambda = (p2.longitude - p1.longitude) * pi / 180;
-
-    double a = sin(deltaPhi / 2) * sin(deltaPhi / 2) +
-        cos(phi1) * cos(phi2) * sin(deltaLambda / 2) * sin(deltaLambda / 2);
-    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-
-    return R * c; // metre cinsinden mesafe
   }
 
   Future<BitmapDescriptor> createCircleIcon(
@@ -416,39 +426,31 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         RouteService.findShortestRoute(startStation, endStation);
 
     int routeId = _nextRouteId++;
+
+    // Yeni değişken tanımları ekleyin
+    final double initialDelay = 0.002;
+    final double vehicleSpacing = 0.0003;
+    final int totalVehicles =
+        lokomotifler.fold(0, (sum, loko) => sum + loko.selectedCount) +
+            vagonlar.fold(0, (sum, vagon) => sum + vagon.selectedCount);
+
     _routes[routeId] = RouteData(
       routeText: route.map((s) => s.name).join(' --> '),
       polylinePoints:
           route.map((s) => LatLng(s.latitude, s.longitude)).toList(),
       lokomotifler: lokomotifler,
       vagonlar: vagonlar,
-      isTrainMoving: false,
-      isCompleted: false, // Added the required parameter
+      isCompleted: false,
       trainPositions: List.generate(
-        lokomotifler.fold(0, (sum, loko) => sum + loko.selectedCount) +
-            vagonlar.fold(0, (sum, vagon) => sum + vagon.selectedCount),
+        totalVehicles,
         (_) => LatLng(route[0].latitude, route[0].longitude),
       ),
       trainProgress: List.generate(
-        lokomotifler.fold(0, (sum, loko) => sum + loko.selectedCount) +
-            vagonlar.fold(0, (sum, vagon) => sum + vagon.selectedCount),
-        (_) => 0.0,
+        totalVehicles,
+        (i) => i == 0 ? -initialDelay : -i * vehicleSpacing - initialDelay,
       ),
-      trainPolylineIndex: List.generate(
-        lokomotifler.fold(0, (sum, loko) => sum + loko.selectedCount) +
-            vagonlar.fold(0, (sum, vagon) => sum + vagon.selectedCount),
-        (_) => 0,
-      ),
-      onUpdate: () {
-        setState(() {
-          // Kazancı kasa'ya ekle
-          if (_routes[routeId]?.isCompleted == true) {
-            final earnings = _routes[routeId]!.calculateEarnings();
-            kasa += earnings;
-            _routes[routeId]!.isCompleted = false; // Tekrar eklenmemesi için
-          }
-        });
-      },
+      trainPolylineIndex: List.generate(totalVehicles, (_) => 0),
+      onUpdate: () => setState(() {}),
     );
 
     routePolylinePoints.add(_routes[routeId]!.polylinePoints);
@@ -468,138 +470,78 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               Text("Rota oluşturuldu: ${_routes[routeId]!.formattedDistance}")),
     );
 
-    setState(() {});
+    setState(() {
+      _currentRouteId = routeId;
+    });
   }
 
-  void _startTrainAnimation(int routeId, {double speedKmh = 250.0}) {
+  void startTrainAnimation(int routeId) {
+    debugPrint("Animasyon başlatılıyor: $routeId");
     final routeData = _routes[routeId];
-    if (routeData == null) return;
+    if (routeData == null || routeData.isTrainMoving) return;
 
-    // SADECE SEÇİLEN ROTANIN ANİMASYONUNU KONTROL ET
-    routeData.initializeAnimation(this);
-    if (routeData.isTrainMoving) {
-      routeData.pause();
-    } else {
-      routeData.resume(speedKmh: speedKmh);
-    }
+    // Speed değerini RouteData'dan alın
+    double speed = routeData.speedKmh * 1000 / 3600;
+    double totalDistance = routeData.totalDistance;
+    double totalTime = totalDistance / speed;
 
-    // Play butonuna basıldığı andaki saati al
-    final now = DateTime.now();
-    setState(() {
-      routeData.currentTime = "${now.hour.toString().padLeft(2, '0')}:";
-      "${now.minute.toString().padLeft(2, '0')}";
-    });
-    routeData.resumeAnimations();
-    debugPrint(
-      'Tren ${routeId + 1} başlatıldı:\n'
-      'Lokomotifler: ${routeData.lokomotifler.map((l) => l.tip).join(", ")}\n'
-      'Hesaplanan Hız: ${routeData.formattedSpeed}\n'
-      'Toplam Yük: ${routeData.vagonlar.fold(0, (sum, v) => sum + (v.kapasite * v.selectedCount))} ton',
-    );
+    routeData.progressIncrement = (1 / totalTime) * 0.05;
 
-    if (routeData.isCompleted) {
-      routeData.resetRoute();
-    }
-
-    if (routeData.isTrainMoving) {
-      routeData.pause();
-    } else {
-      routeData.initializeAnimation(this);
-      routeData.resume(speedKmh: routeData.speedKmh);
-    }
-
-    setState(() {
-      if (routeData.isCompleted || !routeData.wasStarted) {
-        routeData.resetPositions();
-
-        routeData.isCompleted = false;
-      }
-
+    routeData.positionStream.listen((positions) {
       if (routeData.isTrainMoving) {
-        _pauseTrainAnimation(routeId);
-      } else {
-        routeData.resume(speedKmh: speedKmh);
+        setState(() => routeData.trainPositions = positions);
       }
     });
-
-    const double simulationSpeedMultiplier = 100.0;
-    double totalDistance = 0;
-    for (int i = 0; i < routeData.polylinePoints.length - 1; i++) {
-      totalDistance += _HomePageState.calculateDistance(
-          routeData.polylinePoints[i], routeData.polylinePoints[i + 1]);
+    routeData.startAnimation();
+    if (routeData == null || routeData.isTrainMoving) return;
+    if (!routeData.isTrainMoving) {
+      routeData.startAnimation();
+      routeData.currentTime = DateFormat('HH:mm').format(DateTime.now());
+      routeData.startRouteAnimations();
+      setState(() {});
     }
 
-    double adjustedSpeed = speedKmh * simulationSpeedMultiplier;
-    double speedMps = adjustedSpeed * 1000 / 3600;
-    double totalTime = totalDistance / speedMps;
+    routeData.currentTime = DateFormat('HH:mm').format(DateTime.now());
+    routeData.startRouteAnimations();
 
-    double progressIncrement = (1 / totalTime) * 0.15;
-
-    routeData.wasStarted = true;
-    routeData.isCompleted = false; // Bu satırı ekleyin
-    routeData.isTrainMoving = true;
-    routeData.startAnimations();
-
-    Timer timer = Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      // Timer logic here
-    });
-    routeData.animationTimer = timer;
-    Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      bool allTrainsArrived = true;
+    routeData.animationTimer =
+        Timer.periodic(const Duration(milliseconds: 50), (timer) {
+      bool allCompleted = true;
 
       for (int i = 0; i < routeData.trainPositions.length; i++) {
-        final currentIndex = routeData.trainPolylineIndex[i];
-        final isLastSegment = currentIndex >=
-            routeData.polylinePoints.length - 1; // ← Bu satırı ekleyin
-
-        if (!isLastSegment) {
-          routeData.trainProgress[i] += progressIncrement;
-          allTrainsArrived = false;
-
-          if (routeData.trainProgress[i] >= 1.0) {
-            routeData.trainPolylineIndex[i]++;
-            routeData.updateCurrentStation(routeData.trainPolylineIndex[i]);
-            routeData.trainProgress[i] = 0.0;
-          }
-
-          final start = routeData.polylinePoints[currentIndex];
-          final end = routeData.polylinePoints[currentIndex + 1];
-          routeData.trainPositions[i] = LatLng(
-            start.latitude +
-                (end.latitude - start.latitude) * routeData.trainProgress[i],
-            start.longitude +
-                (end.longitude - start.longitude) * routeData.trainProgress[i],
-          );
-        } else {
-          if (routeData.trainProgress[i] < 1.0) {
-            routeData.trainProgress[i] += progressIncrement;
-            allTrainsArrived = false;
-          }
-          routeData.trainPositions[i] = routeData.polylinePoints.last;
+        if (routeData.trainProgress[i] < 1.0) {
+          routeData.trainProgress[i] += routeData.progressIncrement *
+              (i < routeData.lokoAdet ? 1.0 : 0.98);
+          routeData.trainProgress[i] =
+              routeData.trainProgress[i].clamp(0.0, 1.0);
+          allCompleted = false;
         }
+        routeData.trainPositions[i] = trainPositions[i] =
+            routeData.getPositionAlongRoute(routeData.trainProgress[i]);
       }
 
-      if (allTrainsArrived) {
-        timer.cancel();
-        routeData.pauseAnimations();
-        setState(() {
-          routeData.completeRoute();
-          kasa += 100;
-          bitirilenSefer++;
-          if (bitirilenSefer % 25 == 0) level++;
-        });
-        Future.delayed(const Duration(milliseconds: 5), () {
-          if (mounted) setState(() => routeData.resetPositions());
-        });
+      routeData.updatePositions();
+      routeData.updatePositionStream(routeData.trainPositions);
+      void pauseTrainAnimation(int routeId) {
+        _routes[routeId]?.pauseAnimation();
+        setState(() {});
       }
-      _routeStreamControllers[routeId]!.add(routeData.trainPositions);
-      if (mounted) setState(() {});
     });
+  }
+
+  void _toggleRouteAnimation(int routeId) {
+    final route = _routes[routeId];
+    if (route == null) return;
 
     setState(() {
-      routeData.currentTime =
-          "${DateTime.now().hour.toString().padLeft(2, '0')}:"
-          "${DateTime.now().minute.toString().padLeft(2, '0')}";
+      if (route.isTrainMoving) {
+        route.pauseAnimation();
+      } else {
+        final now = DateTime.now();
+        route.currentTime = DateFormat('HH:mm').format(now);
+        route.startAnimation();
+      }
+      _currentRouteId = routeId;
     });
   }
 
@@ -632,6 +574,23 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     setState(() {
       titleText = _controller.text;
       isEditingTitle = false;
+    });
+  }
+
+  void _deleteRoute(int routeId) {
+    final routeData = _routes[routeId];
+    if (routeData == null) return;
+
+    if (routeData.isTrainMoving) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Önce treni durdurun!')),
+      );
+      return;
+    }
+
+    setState(() {
+      routeData.dispose();
+      _routes.remove(routeId);
     });
   }
 
@@ -732,7 +691,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   child: GestureDetector(
                     onTap: () {
                       _showDepoDialog(context);
-                      debugPrint("deppo tıklandı");
+                      debugPrint("market tıklandı");
                     },
                     child: Container(
                       margin: const EdgeInsets.all(15),
@@ -794,135 +753,107 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 children: [
                   ..._routes.entries.map(
                     (entry) {
-                      int routeId = entry.key;
-                      RouteData routeData = entry.value;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() {
-                            _currentRouteId = routeId;
-                          });
-                          debugPrint("seçilen tren");
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.all(8),
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          color: Colors.grey[400],
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              IntrinsicWidth(
-                                child: Text(
-                                  (routeData.currentTime ??
-                                      "00:00"), // Null-aware operatör eklendi
-                                  style: TextStyle(
-                                    color: routeData.isTrainMoving
-                                        ? Colors.green
-                                        : Colors.red,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: GestureDetector(
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: Row(
-                                      children: routeData.routeText
-                                          .split(' --> ')
-                                          .asMap()
-                                          .entries
-                                          .map((entry) {
-                                        int index = entry.key;
-                                        String station = entry.value;
-                                        bool isPassed = index <
-                                            routeData.currentStationIndex;
-                                        bool isCurrent = index ==
-                                            routeData.currentStationIndex;
+                      final routeId = entry.key;
+                      final routeData = entry.value;
 
-                                        return Row(
-                                          children: [
-                                            Text(
-                                              station,
-                                              style: TextStyle(
-                                                fontSize: 16,
-                                                color: isCurrent
-                                                    ? Colors.red
-                                                    : isPassed
-                                                        ? Colors.green
-                                                        : Colors.black,
-                                              ),
-                                            ),
-                                            if (index <
-                                                routeData.routeText
-                                                        .split(' --> ')
-                                                        .length -
-                                                    1)
-                                              const Text(' --> '),
-                                          ],
-                                        );
-                                      }).toList(),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
+                      return ValueListenableBuilder<int>(
+                        valueListenable: routeData.currentStationNotifier,
+                        builder: (context, currentIndex, _) {
+                          return GestureDetector(
+                            onTap: () =>
+                                setState(() => _currentRouteId = routeId),
+                            child: Container(
+                              padding: const EdgeInsets.all(8),
+                              margin: const EdgeInsets.symmetric(vertical: 4),
+                              color: _currentRouteId == routeId
+                                  ? Colors.blue[200]
+                                  : Colors.grey[400],
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceAround,
                                 children: [
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      final routeData = _routes[routeId]!;
-                                      if (routeData.isCompleted ||
-                                          !routeData.isTrainMoving) {
-                                        _startTrainAnimation(routeId);
-                                      } else {
-                                        _pauseTrainAnimation(routeId);
-                                      }
-                                    },
-                                    child: Icon(
-                                      _routes[routeId]!.isCompleted ||
-                                              !_routes[routeId]!.isTrainMoving
-                                          ? Icons.play_arrow
-                                          : Icons.pause,
+                                  // Zaman bilgisi
+                                  IntrinsicWidth(
+                                    child: Text(
+                                      routeData.currentTime ?? "00:00",
+                                      style: TextStyle(
+                                        color: routeData.isTrainMoving
+                                            ? Colors.green
+                                            : Colors.red,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
                                     ),
                                   ),
                                   const SizedBox(width: 8),
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      if (routeData.isTrainMoving) {
-                                        ScaffoldMessenger.of(context)
-                                            .showSnackBar(
-                                          const SnackBar(
-                                            content: Text(
-                                                'Tren hareket halindeyken rota silinemez!'),
-                                          ),
-                                        );
-                                      } else {
-                                        setState(() {
-                                          routeData.disposeAnimation();
-                                          _routes.remove(routeId);
-                                          routePolylinePoints.removeAt(routeId);
-                                          routePolylines.removeAt(routeId);
-                                          if (_currentRouteId == routeId) {
-                                            _currentRouteId = -1;
-                                          }
-                                          kasa -= 20;
-                                          if (kasa < 0) kasa = 0;
-                                        });
-                                      }
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.red,
+                                  // İstasyon listesi
+                                  Expanded(
+                                    child: SingleChildScrollView(
+                                      scrollDirection: Axis.horizontal,
+                                      child: Row(
+                                        children: routeData.routeText
+                                            .split(' --> ')
+                                            .asMap()
+                                            .entries
+                                            .map((e) {
+                                          bool isPassed = e.key < currentIndex;
+                                          bool isCurrent =
+                                              e.key == currentIndex;
+
+                                          return Row(
+                                            children: [
+                                              Text(
+                                                e.value,
+                                                style: TextStyle(
+                                                  fontSize: 16,
+                                                  color: isCurrent
+                                                      ? Colors.red
+                                                      : isPassed
+                                                          ? Colors.green
+                                                          : Colors.black,
+                                                  fontWeight: isCurrent
+                                                      ? FontWeight.bold
+                                                      : FontWeight.normal,
+                                                ),
+                                              ),
+                                              if (e.key <
+                                                  routeData.routeText
+                                                          .split(' --> ')
+                                                          .length -
+                                                      1)
+                                                const Text(' --> '),
+                                            ],
+                                          );
+                                        }).toList(),
+                                      ),
                                     ),
-                                    child: const Text('Sil'),
+                                  ),
+                                  // Kontrol butonları
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      // Play/Pause butonlarını güncelleyin
+                                      ElevatedButton(
+                                        onPressed: () =>
+                                            _toggleRouteAnimation(routeId),
+                                        child: Icon(routeData.isTrainMoving
+                                            ? Icons.pause
+                                            : Icons.play_arrow),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      ElevatedButton(
+                                        onPressed: () => _deleteRoute(routeId),
+                                        style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.red),
+                                        child: const Text('Sil'),
+                                      ),
+                                    ],
                                   ),
                                 ],
                               ),
-                            ],
-                          ),
-                        ),
+                            ),
+                          );
+                        },
                       );
                     },
                   ),
@@ -938,60 +869,37 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
+                    // Sabit arka plan (her zaman görünür)
                     Column(
                       children: [
                         Expanded(
                           child: Image.asset(
-                            'lib/assets/manzara.jpg',
-                            fit: BoxFit.cover,
-                            width: double.infinity, // Genişliği tam yap
+                            'lib/assets/arkaplan/manzara.jpg',
+                            fit: BoxFit.values[0],
+                            width: double.infinity,
                           ),
                         ),
                         Image.asset(
                           'lib/assets/ray.png',
                           fit: BoxFit.fitWidth,
                           repeat: ImageRepeat.repeatX,
-                          width: double.infinity, // Genişliği tam yap
+                          width: double.infinity,
                         ),
                       ],
                     ),
 
-                    // 1. RAY ANİMASYONU (En alt katman)
-                    if (_routes[_currentRouteId]?.isTreeAnimationActive ??
-                        false)
+                    // Animasyonlar (arka planın üzerinde)
+                    if (_routes.containsKey(_currentRouteId)) ...[
                       Positioned.fill(
-                        bottom: 8, // Siyah çizgi üzerinde
+                        bottom: 9,
                         child: RayAnimationWidget(
                           routeId: _currentRouteId,
-                          isActive:
-                              _routes[_currentRouteId]?.shouldShowAnimations ??
-                                  false,
-                          speed: _currentRouteId != -1
-                              ? _routes[_currentRouteId]!.speed
-                              : 1.0,
+                          isActive: _routes[_currentRouteId]!.isTrainMoving,
+                          speed: _routes[_currentRouteId]!.speedKmh,
                         ),
                       ),
-
-                    // 3. İSTASYON ANİMASYONU (şimdilik kaldırıldı)
-                    // if (_routes[_currentRouteId]?.isStationAnimationActive ??
-                    //     false)
-                    //   Positioned(
-                    //     bottom: -300, // Siyah çizgi üzerinde
-                    //     left: 0,
-                    //     right: 0,
-                    //     height: 200,
-                    //     child: StationAnimationWidget(
-                    //       stationName: _getCurrentStationName(_currentRouteId),
-                    //       isActive: _routes[_currentRouteId]!.isTrainMoving,
-                    //       routeData: _routes[_currentRouteId]!,
-                    //     ),
-                    //   ),
-
-                    // 4. TREN VE VAGONLAR
-                    if (_currentRouteId != -1 &&
-                        _routes[_currentRouteId] != null)
                       Positioned(
-                        bottom: -30, // Siyah çizgi üzerinde
+                        bottom: -25,
                         child: SizedBox(
                           height: 140,
                           child: SingleChildScrollView(
@@ -999,7 +907,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.end,
                               children: [
-                                // VAGONLAR
                                 Row(
                                   children: _routes[_currentRouteId]!
                                       .vagonlar
@@ -1010,16 +917,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                                   right: 5),
                                               child: Image.asset(
                                                 vagon.resim,
-                                                width: 100,
-                                                height: 120,
+                                                width: 200,
+                                                height: 150,
                                                 fit: BoxFit.contain,
                                               ),
                                             ),
                                           ))
                                       .toList(),
                                 ),
-
-                                // LOKOMOTİFLER
                                 Row(
                                   children: _routes[_currentRouteId]!
                                       .lokomotifler
@@ -1039,58 +944,36 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                           ),
                         ),
                       ),
-
-                    // 2. AĞAÇ ANİMASYONU
-                    // if (_routes[_currentRouteId]?.isTreeAnimationActive ??
-                    //     false)
-                    if (_routes[_currentRouteId] != null)
                       Positioned(
-                        bottom: 2, // Siyah çizgi üzerinde
+                        top: 8,
                         left: 0,
                         right: 0,
-                        height: 200,
-                        child: TreeAnimationWidget(
-                          routeId: _currentRouteId,
-                          isActive:
-                              _routes[_currentRouteId]?.isTreeAnimationActive ??
-                                  false,
-                          speed: _routes[_currentRouteId]!.speed,
-                          baseOffset: 50,
-                        ),
-                      ),
-
-                    // COİN ANİMASYONU (En üst katman)
-                    // if (_routes[_currentRouteId]?.isCoinAnimationActive ??
-                    //     false)
-                    if (_routes[_currentRouteId] != null)
-                      Positioned.fill(
-                        child: CoinAnimateScreen(
-                          isActive: _routes[_currentRouteId]!.isTrainMoving,
-                          onCoinCollected: _onCoinCollected,
-                        ),
-                      ),
-
-                    // HIZ GÖSTERGESİ
-                    Positioned(
-                      top: 8,
-                      left: 0,
-                      right: 0,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.speed, color: Colors.blue),
-                          const SizedBox(width: 5),
-                          Text(
-                            'max Hız: ${_routes[_currentRouteId]?.formattedSpeed ?? 'N/A'} ',
-                            style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.blue,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.speed, color: Colors.blue),
+                            const SizedBox(width: 5),
+                            Text(
+                              'max Hız: ${_routes[_currentRouteId]!.formattedSpeed}',
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.red,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    )
+                      TreeAnimationWidget(
+                        routeId: _currentRouteId,
+                        isActive: _routes[_currentRouteId]!.isTrainMoving,
+                        speed: _routes[_currentRouteId]!.speedKmh,
+                      ),
+                      CoinAnimateScreen(
+                        isActive: _routes[_currentRouteId]!.isTrainMoving,
+                        onCoinCollected: _onCoinCollected,
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1109,19 +992,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   },
                   child: const Icon(Icons.add),
                 ),
+                // Ana ekrandaki harita butonunu güncelleyin
                 FloatingActionButton(
-                  backgroundColor: Colors.amber,
                   onPressed: () {
-                    // Ana ekranda MapScreen çağrısı:
-                    // main.dart içinde MapScreen çağrısını düzeltin
+                    // This should now match the updated constructor
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (context) => MapScreen(
+                          activeRouteId: _activeRouteId,
                           combinedPositionStream: combinedPositionStream,
                           routePolylines: routePolylines,
                           routes: _routes,
-                          // Removed trainPositionStream as it is not defined
                         ),
                       ),
                     );

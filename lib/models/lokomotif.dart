@@ -40,6 +40,7 @@ List<Lokomotif> lokoListesi = [
     guc: 900,
     resim: 'lib/assets/lokomotifler/DH7000.png',
   ),
+  
   Lokomotif(
     id: '1',
     tip: "lde11000",
@@ -57,22 +58,6 @@ List<Lokomotif> lokoListesi = [
     resim: 'lib/assets/lokomotifler/lde18000.png',
   ),
   Lokomotif(
-    id: '2',
-    tip: "lde22000",
-    adet: 42,
-    hiz: 75,
-    guc: 2200,
-    resim: 'lib/assets/lokomotifler/lde22000.png',
-  ),
-  Lokomotif(
-    id: '3',
-    tip: "lde33000",
-    adet: 42,
-    hiz: 80,
-    guc: 3300,
-    resim: 'lib/assets/lokomotifler/lde33000.png',
-  ),
-  Lokomotif(
     id: '4',
     tip: "lde24000",
     adet: 43,
@@ -81,10 +66,27 @@ List<Lokomotif> lokoListesi = [
     resim: 'lib/assets/lokomotifler/lde24000.png',
   ),
   Lokomotif(
+    id: '2',
+    tip: "lde22000",
+    adet: 42,
+    hiz: 80,
+    guc: 2200,
+    resim: 'lib/assets/lokomotifler/lde22000.png',
+  ),
+  Lokomotif(
+    id: '3',
+    tip: "lde33000",
+    adet: 42,
+    hiz: 90,
+    guc: 3300,
+    resim: 'lib/assets/lokomotifler/lde33000.png',
+  ),
+
+  Lokomotif(
     id: '5',
     tip: "lde36000",
     adet: 43,
-    hiz: 90,
+    hiz: 100,
     guc: 3600,
     resim: 'lib/assets/lokomotifler/lde36000.png',
   ),
@@ -92,7 +94,7 @@ List<Lokomotif> lokoListesi = [
     id: '5',
     tip: "le68000",
     adet: 20,
-    hiz: 100,
+    hiz: 120,
     guc: 6800,
     resim: 'lib/assets/lokomotifler/le68000.png',
   ),

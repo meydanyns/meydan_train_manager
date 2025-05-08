@@ -48,6 +48,11 @@ class _TreeAnimationWidgetState extends State<TreeAnimationWidget>
         _startTreeSpawning();
       }
     });
+    _treeController = AnimationController(
+      // ✅ initState'de başlatın
+      vsync: this,
+      duration: Duration(seconds: 1),
+    )..repeat();
   }
 
   void _startTreeSpawning() {

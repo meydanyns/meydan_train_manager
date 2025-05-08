@@ -42,7 +42,7 @@ class RouteService {
       Station(name: 'Güllüce', latitude: 40.814777, longitude: 33.407231),
       Station(name: 'Kurşunlu', latitude: 40.844297, longitude: 33.261692),
       Station(name: 'Çerkeş', latitude: 40.811154, longitude: 32.884729),
-      Station(name: 'ismetpaşa', latitude: 40.877024, longitude: 32.610454),
+      Station(name: 'ismetpaşa', latitude: 40.868968, longitude: 32.625625),
       Station(name: 'Karabük', latitude: 41.195139, longitude: 32.614644),
       Station(name: 'Bolkuş', latitude: 41.160668, longitude: 32.517103),
       Station(name: 'Kayadibi', latitude: 41.236262, longitude: 32.202398),
@@ -274,6 +274,7 @@ class RouteService {
       Station(name: 'Çağlar', latitude: 38.587752, longitude: 39.362924),
       Station(name: 'Muratbağı', latitude: 38.654485, longitude: 39.781094),
       Station(name: 'Palu', latitude: 38.690948, longitude: 39.926142),
+      Station(name: 'Beyhan', latitude: 38.732735, longitude: 40.119268),
       Station(name: 'Genç', latitude: 38.751475, longitude: 40.556416),
       Station(name: 'Oymapınar', latitude: 38.858741, longitude: 40.970740),
       Station(name: 'kurt', latitude: 38.834572, longitude: 41.269777),
@@ -282,6 +283,7 @@ class RouteService {
       Station(name: 'Tatvan', latitude: 38.507060, longitude: 42.276269),
     ],
 
+//Afyon - Ulukışla Hattı
     [
       Station(name: 'Afyon', latitude: 38.763163, longitude: 30.553595),
       Station(name: 'Çay', latitude: 38.628002, longitude: 31.036814),
@@ -297,6 +299,24 @@ class RouteService {
       Station(name: 'Karaman', latitude: 37.190271, longitude: 33.220925),
       Station(name: 'Ereğli', latitude: 37.503086, longitude: 34.044511),
       Station(name: 'Ulukışla', latitude: 37.5458, longitude: 34.4814),
+    ],
+    //Afyon - Manisa
+    [
+      Station(name: 'Afyon', latitude: 38.763163, longitude: 30.553595),
+      Station(name: 'Gecek', latitude: 38.846569, longitude: 30.427698),
+      Station(name: 'Balmahmut', latitude: 38.810192, longitude: 30.345606),
+      Station(name: 'Başkimse', latitude: 38.860020, longitude: 30.189520),
+      Station(name: 'Dumlupınar', latitude: 38.847701, longitude: 29.985203),
+      Station(name: 'Banaz', latitude: 38.735946, longitude: 29.753668),
+      Station(name: 'Nohutova', latitude: 38.669983, longitude: 29.642778),
+      Station(name: 'Uşak', latitude: 38.663862, longitude: 29.407142),
+      Station(name: 'İnay', latitude: 38.421900, longitude: 29.227392),
+      Station(name: 'Eşme', latitude: 38.398681, longitude: 28.969194),
+      Station(name: 'Konaklar', latitude: 38.357339, longitude: 28.710427),
+      Station(name: 'Alaşehir', latitude: 8.355463, longitude: 28.517264),
+      Station(name: 'Salihli', latitude: 38.482982, longitude: 28.131185),
+      Station(name: 'Turgutlu', latitude: 38.510020, longitude: 27.706584),
+      Station(name: 'Manisa', latitude: 38.621469, longitude: 27.435501),
     ],
   ];
 

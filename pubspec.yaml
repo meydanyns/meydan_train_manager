@@ -35,18 +35,15 @@ dependencies:
   flutter_map: ^8.1.1  
   google_maps_flutter: ^2.2.3
   flutter_plugin_android_lifecycle: ^2.0.7
-
+  intl: ^0.18.1
   geolocator: ^14.0.0 # Güncel sürüm
   async: ^2.12.0
   fake_async: ^1.3.2
   leak_tracker: ^10.0.8
-  rxdart: ^0.27.7
- 
+  rxdart: ^0.27.7 
   material_color_utilities: ^0.11.1 # 0.12.0 yerine bu sürümü kullanın
   vector_math: ^2.1.4
-  flutter_bloc: ^9.1.0
-  intl: ^0.20.2  # Güncel sürüm
-  
+  flutter_bloc: ^9.1.0  
   dropdown_search: ^5.0.6 #hem arama hemde dropdown için kullanılıyor 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
@@ -94,7 +91,7 @@ flutter:
     - lib/assets/lokomotifler/lde36000.png
     - lib/assets/lokomotifler/le68000.png
     - lib/assets/lokomotifler/E43000.png
-  
+    - lib/assets/lokomotifler/E43000.png
 
     - lib/assets/circle_black.png
     - lib/assets/circle_red.png    
@@ -103,7 +100,8 @@ flutter:
     - lib/assets/clouds/
     - lib/assets/station.png   
     - lib/assets/ray.png   
-    - lib/assets/manzara.jpg   
+    - lib/assets/arkaplan/
+    
     - lib/assets/lokomotifler/
     - lib/assets/vagonlar/
     - lib/assets/sounds/trenses.mp3

@@ -1,46 +1,124 @@
 import 'dart:async';
-import 'dart:math'; // Import dart:math to use the pi constant
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'lokomotif.dart';
 import 'vagon.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'vehicle_type.dart';
+
+class VehiclePosition {
+  final VehicleType type;
+  final LatLng position;
+
+  VehiclePosition({
+    required this.type,
+    required this.position,
+  });
+}
 
 class RouteData {
   final String routeText;
   final List<LatLng> polylinePoints;
   final List<Lokomotif> lokomotifler;
   final List<Vagon> vagonlar;
-  bool isTrainMoving;
+  final List<String> markerIds = [];
+  final StreamController<List<LatLng>> _positionController =
+      StreamController<List<LatLng>>.broadcast();
+  Stream<List<LatLng>> get positionStream => _positionController.stream;
+
+  // VehiclePositionController hatası için
+  final StreamController<List<VehiclePosition>> vehiclePositionController =
+      StreamController<List<VehiclePosition>>.broadcast();
+
+  final StreamController<bool> _stateController =
+      StreamController<bool>.broadcast();
+  Stream<bool> get stateStream => _stateController.stream;
+  // Değişken tanımları
+  List<LatLng> lokoPositions = [];
+  List<LatLng> vagonPositions = [];
+
   List<LatLng> trainPositions;
   List<double> trainProgress;
   List<int> trainPolylineIndex;
   DateTime startTime;
   Timer? _animationTimer;
-  set animationTimer(Timer? timer) => _animationTimer = timer;
 
+  List<LatLng> _lastKnownPositions = []; // Son bilinen pozisyonlar
+
+  bool isActive = false; // Yeni eklenen aktiflik durumu
+  bool _isTrainMoving = false;
+  bool get isTrainMoving => _isTrainMoving;
   AnimationController? animationController;
   bool _isAnimationInitialized = false;
   bool isCoinAnimationActive = false;
   bool isTreeAnimationActive = false;
-  bool isStationAnimationActive = false; // Bu satırı ekleyin
+  bool isStationAnimationActive = false;
   bool wasStarted = false;
   bool isCompleted;
-  bool get isLastStation => currentStationIndex >= polylinePoints.length - 1;
-  String? currentTime;
-  bool _isAnimating = false;
-
-  // Removed redundant declaration of _animationTimer
-  // Nullable ama başlangıç değeri var
   int currentStationIndex = 0;
   double speed = 1.0;
-  double get scaledSpeed => speed * 0.001; // Hızı 0-1 aralığına ölçekle
   final VoidCallback? onUpdate;
+  String? currentTime;
+  final ValueNotifier<int> currentStationNotifier = ValueNotifier(0);
 
-  Stream<List<LatLng>> get positionStream => _positionController.stream;
-  final StreamController<List<LatLng>> _positionController =
-      StreamController<List<LatLng>>.broadcast(); // Broadcast yapın
+  static const double vehicleSpacing = 0.003; // Vagonlar arası mesafe
+  static const double lokoSpacing = 0.005;
+  static const double initialDelay = 0.02;
 
-  bool shouldShowAnimations = false;
+  // Getter'lar
+  Timer? get animationTimer => _animationTimer;
+  set animationTimer(Timer? timer) {
+    _animationTimer?.cancel();
+    _animationTimer = timer;
+  }
+
+  bool get isLastStation => currentStationIndex >= polylinePoints.length - 1;
+
+  double progressIncrement = 0.0; // Eklendi
+
+  List<VehiclePosition> get vehiclePositions {
+    final List<VehiclePosition> vehicles = [];
+
+    // Lokomotifleri ekle
+    for (int i = 0; i < lokoAdet; i++) {
+      if (i < trainPositions.length) {
+        vehicles.add(VehiclePosition(
+          type: VehicleType.lokomotif,
+          position: trainPositions[i],
+        ));
+      }
+    }
+
+    // Vagonları ekle
+    for (int i = lokoAdet; i < trainPositions.length; i++) {
+      vehicles.add(VehiclePosition(
+        type: VehicleType.vagon,
+        position: trainPositions[i],
+      ));
+    }
+
+    return vehicles;
+  }
+
+  // Sabitler
+  static const double meterToLatLng = 0.00001;
+  static const double spacingMeters = 50;
+
+  RouteData({
+    required this.routeText,
+    required this.polylinePoints,
+    required List<Lokomotif> lokomotifler,
+    required List<Vagon> vagonlar,
+    required this.trainPositions,
+    required this.trainProgress,
+    required this.trainPolylineIndex,
+    required this.onUpdate,
+    required this.isCompleted,
+    // animationTimer parametresini kaldır
+  })  : lokomotifler = lokomotifler.map((l) => l.copyWith()).toList(),
+        vagonlar = vagonlar.map((v) => v.copyWith()).toList(),
+        startTime = DateTime.now(),
+        _isTrainMoving = false;
 
   void resetPositions() {
     final totalVehicles = lokoAdet + vagonAdet;
@@ -49,41 +127,22 @@ class RouteData {
     trainPolylineIndex = List.filled(totalVehicles, 0);
     currentStationIndex = 0;
     isCoinAnimationActive = false;
-    currentTime = "00:00"; // Saati sıfırla
-
+    currentTime = "00:00";
     onUpdate?.call();
   }
 
-  RouteData({
-    required this.routeText,
-    required this.polylinePoints,
-    required List<Lokomotif> lokomotifler,
-    required List<Vagon> vagonlar,
-    this.isTrainMoving = false,
-    required this.trainPositions,
-    required this.trainProgress,
-    required this.trainPolylineIndex,
-    required this.onUpdate,
-    required this.isCompleted,
-    Timer? animationTimer,
-  })  : lokomotifler = lokomotifler.map((l) => l.copyWith()).toList(),
-        vagonlar = vagonlar.map((v) => v.copyWith()).toList(),
-        startTime = DateTime.now(),
-        _animationTimer = animationTimer; // <<< BURASI EKLENDİ
-
-  // Removed redundant initialization of _positionController
+  void updatePositionStream(List<LatLng> positions) {
+    if (_positionController.isClosed) return;
+    _positionController.add(positions);
+  }
 
   // Eksik metodların eklenmesi
   void updateStartTime() => startTime = DateTime.now();
 
   void updateCurrentStation(int newIndex) {
-    // Son indeksi de dahil etmek için koşulu değiştir
-    if (newIndex != currentStationIndex &&
-        newIndex >= 0 &&
-        newIndex < polylinePoints.length) {
-      // <= length-1 yerine length
+    if (newIndex != currentStationIndex && newIndex < polylinePoints.length) {
       currentStationIndex = newIndex;
-      if (onUpdate != null) onUpdate!();
+      if (onUpdate != null) onUpdate!(); // UI'ı yenile
     }
   }
 
@@ -107,33 +166,67 @@ class RouteData {
         .toSet();
   }
 
-// RouteData sınıfında
-  void updatePosition(int index) {
-    final currentIndex = trainPolylineIndex[index];
-    if (currentIndex >= polylinePoints.length - 1) return;
+  void startRouteAnimations() {
+    isTreeAnimationActive = true;
+    isCoinAnimationActive = true;
+    isStationAnimationActive = true;
+    if (onUpdate != null) onUpdate!();
+  }
 
-    final start = polylinePoints[currentIndex];
-    final end = polylinePoints[currentIndex + 1];
+  void stopRouteAnimations() {
+    isTreeAnimationActive = false;
+    isCoinAnimationActive = false;
+    isStationAnimationActive = false;
+    if (onUpdate != null) onUpdate!();
+  }
 
-    trainPositions[index] = LatLng(
-      start.latitude + (end.latitude - start.latitude) * trainProgress[index],
-      start.longitude +
-          (end.longitude - start.longitude) * trainProgress[index],
+// route_data.dart dosyasına ekleyin
+  void updatePositions() {
+    if (!isActive) return;
+
+    // Konum güncelleme mantığı
+    for (int i = 0; i < trainProgress.length; i++) {
+      trainPositions[i] = getPositionAlongRoute(trainProgress[i]);
+    }
+    _positionController.add(trainPositions);
+  }
+
+  // Private yerine public method yapın (alt çizgiyi kaldırın)
+// Güncellenmiş getPositionAlongRoute metodu
+  LatLng getPositionAlongRoute(double progress) {
+    final path = polylinePoints;
+    if (path.isEmpty) return const LatLng(0, 0);
+
+    progress = progress.clamp(0.0, 1.0);
+    final double length = path.length.toDouble();
+    final double target = progress * (length - 1);
+
+    final int index = target.floor().clamp(0, path.length - 2);
+    final double segmentProgress = target - index;
+
+    final start = path[index];
+    final end = path[index + 1];
+
+    return LatLng(
+      start.latitude + (end.latitude - start.latitude) * segmentProgress,
+      start.longitude + (end.longitude - start.longitude) * segmentProgress,
     );
+  }
 
-    // Tüm pozisyonları tek seferde gönder
-    _positionController.add(List<LatLng>.from(trainPositions));
+// Kullanılmayan metodlar KALDIRILDI
+
+// RouteData sınıfına bu metodu ekleyin
+  LatLng getPositionForVehicle(int vehicleIndex) {
+    const double spacing = 50.0; // 50 metre ara
+    return getPositionAlongRoute(
+      trainProgress[0], // İlk lokomotifin progresi
+    );
   }
 
   Timer? get currentAnimationTimer => _animationTimer;
   set currentAnimationTimer(Timer? timer) {
     _animationTimer?.cancel(); // Eski timer'ı temizle
     _animationTimer = timer;
-  }
-
-  void pauseAnimation() {
-    _isAnimating = false;
-    _animationTimer?.cancel();
   }
 
   void resumeAnimations() {
@@ -156,19 +249,15 @@ class RouteData {
 
 // RouteData içinde speed hesaplaması
 // Lokomotif bazlı hız hesaplama (km/h cinsinden)
+  // RouteData içinde hız hesaplamasını iyileştirme
   double get speedKmh {
     if (lokomotifler.isEmpty) return 0.0;
 
-    double maxHiz = lokomotifler
-        .map((loko) => loko.hiz)
-        .fold(0.0, (max, hiz) => hiz > max ? hiz : max);
+    double totalWeight = vagonlar.fold(0.0, (sum, v) => sum + v.kapasite);
+    double speedReduction =
+        totalWeight * 0.0005; // Her 1000 ton için %0.5 hız kaybı
 
-    // Yük etkisi (örnek: her 1000 TON için %5 yavaşlama)
-    double totalLoad =
-        vagonlar.fold(0, (sum, v) => sum + (v.kapasite * v.selectedCount));
-    double loadFactor = (totalLoad / 1000) * 0.05;
-
-    return maxHiz * (1 - loadFactor.clamp(0.0, 0.3)); // Max %30 yavaşlama
+    return lokomotifler.map((l) => l.hiz).reduce(max) * (1 - speedReduction);
   }
 
 // Gerçek zamanlı hız bilgisi için
@@ -184,11 +273,83 @@ class RouteData {
     return (distanceKm * totalLoad * 0.1).round();
   }
 
+  List<LatLng> get visiblePositions {
+    return _isTrainMoving ? trainPositions : _lastKnownPositions;
+  }
+
+//sadece bir rotanın animasyonunu başlatmak için
+  void startAnimation() {
+    if (_isTrainMoving) return;
+
+    _isTrainMoving = true;
+    _stateController.add(true);
+
+    final totalDistance = this.totalDistance;
+    final speed = speedKmh * 1000 / 3600;
+    final totalTime = totalDistance / speed;
+
+    // Hız çarpanını
+    progressIncrement = (1 / totalTime) * 0.20;
+
+    _animationTimer?.cancel();
+    _animationTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
+      bool allCompleted = true;
+
+      // İlk lokomotifin hareketi
+      if (trainProgress[0] < 1.0) {
+        trainProgress[0] += progressIncrement;
+        trainProgress[0] = trainProgress[0].clamp(0.0, 1.0);
+        allCompleted = false;
+      }
+
+      // Diğer araçların kademeli hareketi
+      for (int i = 1; i < trainProgress.length; i++) {
+        double targetProgress = trainProgress[i - 1] - _getSpacingForVehicle(i);
+        if (targetProgress > trainProgress[i]) {
+          trainProgress[i] = targetProgress.clamp(0.0, 1.0);
+          allCompleted = false;
+        }
+      }
+
+      // Konumları güncelle
+      for (int i = 0; i < trainPositions.length; i++) {
+        trainPositions[i] = getPositionAlongRoute(trainProgress[i]);
+      }
+
+      _positionController.add([...trainPositions]);
+      updateCurrentStationIndex();
+
+      if (allCompleted) {
+        timer.cancel();
+        completeRoute();
+      }
+    });
+  }
+
+  double _getSpacingForVehicle(int index) {
+    if (index < lokoAdet) {
+      return lokoSpacing; // Lokomotifler arası daha fazla mesafe
+    }
+    return vehicleSpacing; // Vagonlar arası normal mesafe
+  }
+
+  void pauseAnimation() {
+    if (!_isTrainMoving) return;
+
+    // Son pozisyonları kaydet
+    _lastKnownPositions = List.from(trainPositions);
+
+    _isTrainMoving = false;
+    _stateController.add(false);
+    _animationTimer?.cancel();
+    pauseAnimations();
+  }
+
 // RouteData içinde animationTimer'ı başlatma ve durdurma
   void checkArrival() {
     if (isLastStation) {
       stopAnimations();
-      isTrainMoving = false;
+      _isTrainMoving = false;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _animationTimer?.cancel();
       });
@@ -198,16 +359,15 @@ class RouteData {
   Timer? _clockTimer;
 
   void dispose() {
+    _stateController.close();
     _positionController.close();
+    _animationTimer?.cancel();
   }
 
-  void startAnimations({double speedKmh = 150.0}) {
-    isCoinAnimationActive = true;
-    isTreeAnimationActive = true;
-    isStationAnimationActive = true;
-    onUpdate?.call(); // State'i güncelle
-    if (_isAnimating) return;
-    _isAnimating = true;
+  void startAnimations() {
+    if (_isTrainMoving) return;
+    _isTrainMoving = true;
+    _stateController.add(true);
   }
 
   void stopAnimations() {
@@ -217,8 +377,16 @@ class RouteData {
     onUpdate?.call(); // State'i güncelle
   }
 
-  void toggleAnimations(bool isMoving) =>
-      isMoving ? startAnimations() : stopAnimations();
+  void toggleAnimation() {
+    if (_isTrainMoving) {
+      pauseAnimation();
+    } else {
+      startAnimation();
+    }
+    // Durum değişikliğini tüm dinleyicilere bildir
+    _stateController.add(_isTrainMoving);
+    if (onUpdate != null) onUpdate!();
+  }
 
   void initializeAnimation(TickerProvider vsync) {
     if (!_isAnimationInitialized) {
@@ -250,12 +418,29 @@ class RouteData {
   // Yeni eklenen pause/resume fonksiyonları
   void pause() {
     _animationTimer?.cancel();
-    isTrainMoving = false;
+    _isTrainMoving = false;
+  }
+
+  // route_data.dart içinde
+
+  // RouteData içinde updateCurrentStationIndex metodunu güncelleyin
+  void updateCurrentStationIndex() {
+    if (trainProgress.isEmpty) return;
+
+    double progress = trainProgress[0];
+    int newIndex = (progress * (polylinePoints.length - 1)).floor();
+    newIndex = newIndex.clamp(0, polylinePoints.length - 1);
+
+    if (newIndex != currentStationIndex) {
+      currentStationIndex = newIndex;
+      currentStationNotifier.value = newIndex;
+      if (onUpdate != null) onUpdate!();
+    }
   }
 
   void completeRoute() {
     isCompleted = true;
-    isTrainMoving = false;
+    _isTrainMoving = false;
     stopAnimations();
 
     final earnings = calculateEarnings();
@@ -278,7 +463,7 @@ class RouteData {
 
     // Yeni animasyon timer'ı oluştur
     _startAnimationTimer(speedKmh: speedKmh);
-    isTrainMoving = true;
+    _isTrainMoving = true;
   }
 
   double get totalDistance {
@@ -294,51 +479,17 @@ class RouteData {
   }
 
   void _startAnimationTimer({double speedKmh = 250.0}) {
-    const double simulationSpeedMultiplier = 100.0;
-    double totalDistance = 0;
-    for (int i = 0; i < polylinePoints.length - 1; i++) {
-      totalDistance +=
-          calculateDistance(polylinePoints[i], polylinePoints[i + 1]);
-    }
+    const double simulationSpeedMultiplier = 150.0; // 100'den 150'ye çıkar
+    double totalDistance = this.totalDistance;
 
     double adjustedSpeed = speedKmh * simulationSpeedMultiplier;
     double speedMps = adjustedSpeed * 1000 / 3600;
     double totalTime = totalDistance / speedMps;
 
-    _animationTimer?.cancel(); // Önceki timer'ı iptal et
-    _animationTimer =
-        Timer.periodic(const Duration(milliseconds: 100), (timer) {
-      bool allTrainsArrived = true;
-      double progressIncrement = (1 / totalTime) * 0.15;
-
-      for (int i = 0; i < trainPositions.length; i++) {
-        final currentIndex = trainPolylineIndex[i];
-        final isLastSegment = currentIndex >= polylinePoints.length - 1;
-
-        if (!isLastSegment) {
-          trainProgress[i] += progressIncrement;
-          allTrainsArrived = false;
-
-          if (trainProgress[i] >= 1.0) {
-            trainPolylineIndex[i]++;
-            updateCurrentStation(trainPolylineIndex[i]);
-            trainProgress[i] = 0.0;
-          }
-          updatePosition(i);
-        } else {
-          if (trainProgress[i] < 1.0) {
-            trainProgress[i] += progressIncrement;
-            allTrainsArrived = false;
-          }
-          trainPositions[i] = polylinePoints.last;
-        }
-      }
-
-      if (allTrainsArrived) {
-        timer.cancel();
-        completeRoute();
-        _positionController.add(trainPositions); // Son pozisyonu gönder
-      }
+    _animationTimer?.cancel();
+    // Timer süresini 50ms'den 30ms'ye düşür
+    _animationTimer = Timer.periodic(const Duration(milliseconds: 30), (timer) {
+      // Kalan kodlar aynı...
     });
   }
 
@@ -346,15 +497,14 @@ class RouteData {
     _animationTimer?.cancel();
     resetPositions();
     isCompleted = false;
-    isTrainMoving = false;
+    _isTrainMoving = false;
     wasStarted = false;
     currentStationIndex = 0;
     startTime = DateTime.now();
-    _positionController.add(trainPositions); // Resetlenmiş pozisyonları gönder
+    _positionController.add(trainPositions);
   }
 
-  // Mesafe hesaplama fonksiyonunu buraya taşı
-  static double calculateDistance(LatLng p1, LatLng p2) {
+  double calculateDistance(LatLng p1, LatLng p2) {
     const R = 6371e3;
     double phi1 = p1.latitude * pi / 180;
     double phi2 = p2.latitude * pi / 180;

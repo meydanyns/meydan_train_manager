@@ -22,7 +22,7 @@ class Station {
 
   void get position {}
 
-  void get location => null;
+  void get location {}
 
   // toString metodu ekleyelim (debug için kullanışlıdır)
   @override

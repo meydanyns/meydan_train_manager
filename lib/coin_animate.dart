@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
+// coin_animate.dart başına ekleyin:
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 class Coin {
   double x;

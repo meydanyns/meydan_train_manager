@@ -31,23 +31,37 @@ class Vagon {
 List<Vagon> vagonListesi = [
   Vagon(
     id: '1',
-    tip: 'E',
+    tip: 'Eamnoss',
     adet: 14,
     kapasite: 20,
     resim: 'lib/assets/vagonlar/Eamnoss.png',
   ),
   Vagon(
     id: '3',
-    tip: 'K',
+    tip: 'Ksw',
     adet: 44,
     kapasite: 20,
     resim: 'lib/assets/vagonlar/Ksw.png',
   ),
   Vagon(
     id: '4',
-    tip: 'Z',
+    tip: 'Zacess',
     adet: 54,
     kapasite: 20,
     resim: 'lib/assets/vagonlar/Zacess.png',
+  ),
+  Vagon(
+    id: '4',
+    tip: 'Fals',
+    adet: 44,
+    kapasite: 20,
+    resim: 'lib/assets/vagonlar/Fals.png',
+  ),
+  Vagon(
+    id: '5',
+    tip: 'Elswz',
+    adet: 54,
+    kapasite: 20,
+    resim: 'lib/assets/vagonlar/Elswz.png',
   ),
 ];
