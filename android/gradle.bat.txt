@@ -1,6 +1,0 @@
-@echo off
-setlocal
-set GRADLE_HOME=%~dp0gradle
-set PATH=%GRADLE_HOME%\bin;%PATH%
-gradle %*
-endlocal
