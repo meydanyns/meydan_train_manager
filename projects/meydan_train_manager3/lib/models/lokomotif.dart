@@ -27,7 +27,7 @@ class Lokomotif {
       adet: adet ?? this.adet,
       hiz: hiz,
       guc: guc,
-      fiyat: fiyat,
+      fiyat: fiyat ?? this.fiyat, // Kopyalama işlemine ekle
       resim: resim,
       selectedCount: selectedCount ?? this.selectedCount,
     );
@@ -41,7 +41,7 @@ List<Lokomotif> lokoListesi = [
     adet: 13,
     hiz: 40,
     guc: 700,
-    fiyat: 100000, // Fiyatı ekledik
+    fiyat: 10000, // Fiyatı ekledik
     resim: 'lib/assets/lokomotifler/DH7000.png',
   ),
   Lokomotif(
@@ -50,7 +50,7 @@ List<Lokomotif> lokoListesi = [
     adet: 10,
     hiz: 45,
     guc: 900,
-    fiyat: 100000, // Fiyatı ekledik
+    fiyat: 10000, // Fiyatı ekledik
     resim: 'lib/assets/lokomotifler/DH9500.png',
   ),
 
@@ -60,7 +60,7 @@ List<Lokomotif> lokoListesi = [
     adet: 23,
     hiz: 50,
     guc: 1100,
-    fiyat: 150000, // Fiyatı ekledik
+    fiyat: 15000, // Fiyatı ekledik
     resim: 'lib/assets/lokomotifler/lde11000.png',
   ),
   Lokomotif(
@@ -69,7 +69,7 @@ List<Lokomotif> lokoListesi = [
     adet: 22,
     hiz: 60,
     guc: 1800,
-    fiyat: 200000, // Fiyatı ekledik
+    fiyat: 20000, // Fiyatı ekledik
     resim: 'lib/assets/lokomotifler/lde18000.png',
   ),
   Lokomotif(
@@ -78,7 +78,7 @@ List<Lokomotif> lokoListesi = [
     adet: 43,
     hiz: 70,
     guc: 2400,
-    fiyat: 250000, // Fiyatı ekledik
+    fiyat: 25000, // Fiyatı ekledik
     resim: 'lib/assets/lokomotifler/lde24000.png',
   ),
   Lokomotif(
@@ -87,7 +87,7 @@ List<Lokomotif> lokoListesi = [
     adet: 42,
     hiz: 80,
     guc: 2200,
-    fiyat: 300000, // Fiyatı ekledik
+    fiyat: 30000, // Fiyatı ekledik
     resim: 'lib/assets/lokomotifler/lde22000.png',
   ),
   Lokomotif(
@@ -96,7 +96,7 @@ List<Lokomotif> lokoListesi = [
     adet: 42,
     hiz: 90,
     guc: 3300,
-    fiyat: 350000, // Fiyatı ekledik
+    fiyat: 35000, // Fiyatı ekledik
     resim: 'lib/assets/lokomotifler/lde33000.png',
   ),
 
@@ -106,7 +106,7 @@ List<Lokomotif> lokoListesi = [
     adet: 43,
     hiz: 100,
     guc: 3600,
-    fiyat: 400000, // Fiyatı ekledik
+    fiyat: 40000, // Fiyatı ekledik
     resim: 'lib/assets/lokomotifler/lde36000.png',
   ),
   Lokomotif(
@@ -115,6 +115,7 @@ List<Lokomotif> lokoListesi = [
     adet: 20,
     hiz: 120,
     guc: 6800,
+    fiyat: 45000, // Fiyatı ekledik
     resim: 'lib/assets/lokomotifler/le68000.png',
   ),
   // Diğer lokomotifler...

@@ -24,7 +24,7 @@ class Vagon {
       tip: tip,
       adet: adet ?? this.adet,
       kapasite: kapasite,
-      fiyat: fiyat,
+      fiyat: fiyat ?? this.fiyat, // Kopyalama işlemine ekle
       resim: resim,
       selectedCount: selectedCount ?? this.selectedCount,
     );
