@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:tren/models/inventory_manager.dart';
 import 'package:tren/models/lokomotif.dart';
 import 'package:tren/models/vagon.dart';
+import 'package:provider/provider.dart';
 
 void showMarketDialog(BuildContext context) {
   showDialog(
@@ -23,11 +25,15 @@ void showMarketDialog(BuildContext context) {
                   ],
                 ),
                 Expanded(
-                  child: TabBarView(
-                    children: [
-                      _buildLokomotifList(),
-                      _buildVagonList(),
-                    ],
+                  child: Consumer<InventoryManager>(
+                    builder: (context, inventoryManager, child) {
+                      return TabBarView(
+                        children: [
+                          _buildLokomotifList(context, inventoryManager),
+                          _buildVagonList(context, inventoryManager),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],
@@ -36,12 +42,7 @@ void showMarketDialog(BuildContext context) {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context, {
-                  'startStation': null,
-                  'endStation': null,
-                  'lokomotifler': [],
-                  'vagonlar': [],
-                });
+                Navigator.pop(context);
               },
               child: const Text('Kapat'),
             ),
@@ -52,7 +53,39 @@ void showMarketDialog(BuildContext context) {
   );
 }
 
-Widget _buildLokomotifList() {
+// Satınalma Onay iletişim kutusu fonksiyonu
+Future<void> _showConfirmationDialog(
+  BuildContext context,
+  String message,
+  VoidCallback onConfirm,
+) async {
+  return showDialog<void>(
+    context: context,
+    barrierDismissible: false,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text('Onay'),
+        content: Text(message),
+        actions: <Widget>[
+          TextButton(
+            child: const Text('Hayır'),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          TextButton(
+            child: const Text('Evet'),
+            onPressed: () {
+              Navigator.of(context).pop(); // İletişim kutusunu kapat
+              onConfirm(); // Onaylandığında asıl işlemi çalıştır
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Widget _buildLokomotifList(
+    BuildContext context, InventoryManager inventoryManager) {
   return ListView.separated(
     shrinkWrap: true,
     itemCount: lokoListesi.length,
@@ -94,7 +127,12 @@ Widget _buildLokomotifList() {
             ),
             ElevatedButton(
               onPressed: () {
-                debugPrint('${lokomotif.tip} satın alındı');
+                // DEĞİŞTİ: Direk satın alma yerine onay iletişim kutusu göster
+                _showConfirmationDialog(
+                  context,
+                  '${lokomotif.fiyat} değerindeki ${lokomotif.tip} lokomotifi satın almak istediğinizden emin misiniz?',
+                  () => _buyLokomotif(context, lokomotif, inventoryManager),
+                );
               },
               child: const Text('SATIN AL'),
             ),
@@ -107,7 +145,8 @@ Widget _buildLokomotifList() {
   );
 }
 
-Widget _buildVagonList() {
+Widget _buildVagonList(
+    BuildContext context, InventoryManager inventoryManager) {
   return ListView.separated(
     shrinkWrap: true,
     itemCount: vagonListesi.length,
@@ -141,12 +180,18 @@ Widget _buildVagonList() {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Kapasite: ${vagon.kapasite.toString()} TON'),
+                  Text('Fiyat: ${vagon.fiyat} TL'),
                 ],
               ),
             ),
             ElevatedButton(
               onPressed: () {
-                debugPrint('${vagon.tip} satın alındı');
+                // DEĞİŞTİ: Direk satın alma yerine onay iletişim kutusu göster
+                _showConfirmationDialog(
+                  context,
+                  '${vagon.fiyat} değerindeki ${vagon.tip} vagonu satın almak istediğinizden emin misiniz?',
+                  () => _buyVagon(context, vagon, inventoryManager),
+                );
               },
               child: const Text('SATIN AL'),
             ),
@@ -157,4 +202,40 @@ Widget _buildVagonList() {
     separatorBuilder: (context, index) =>
         const Divider(thickness: 1, color: Colors.black),
   );
+}
+
+void _buyLokomotif(BuildContext context, Lokomotif lokomotif,
+    InventoryManager inventoryManager) {
+  if (inventoryManager.kasa >= lokomotif.fiyat) {
+    inventoryManager.addKasa(-lokomotif.fiyat);
+    inventoryManager.addLokomotifStock(lokomotif.tip, 1);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${lokomotif.tip} satın alındı!')),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text(
+              'Yetersiz bakiye! ${lokomotif.fiyat - inventoryManager.kasa} TL eksiğiniz var.')),
+    );
+  }
+}
+
+void _buyVagon(
+    BuildContext context, Vagon vagon, InventoryManager inventoryManager) {
+  if (inventoryManager.kasa >= vagon.fiyat) {
+    inventoryManager.addKasa(-vagon.fiyat);
+    inventoryManager.addVagonStock(vagon.tip, 1);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('${vagon.tip} satın alındı!')),
+    );
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+          content: Text(
+              'Yetersiz bakiye! ${vagon.fiyat - inventoryManager.kasa} TL eksiğiniz var.')),
+    );
+  }
 }

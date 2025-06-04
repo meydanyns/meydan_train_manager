@@ -74,7 +74,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final int _activeRouteId = -1;
   int lokoAdet = 0; // Lokomotif sayısı
   int vagonAdet = 0; // Vagon sayısı
-  int kasa = 1000; // Başlangıç kasası
+  //int kasa = 100000; // Başlangıç kasası
   int level = 1; // Oyun seviyesi
   int bitirilenSefer = 0; // Bitirilen sefer sayısı
   int iptalSefer = 0; // İptal edilen sefer sayısı
@@ -123,10 +123,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   void _onCoinCollected(int amount) {
-    setState(() {
-      kasa += amount;
-      // Eski hatalı kodlar silindi
-    });
+    final inventoryManager =
+        Provider.of<InventoryManager>(context, listen: false);
+    inventoryManager.addKasa(amount);
   }
 
   void showTrainRequestDialog(BuildContext context) async {
@@ -189,12 +188,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   void updateKasa(int amount) {
-    if (!mounted) return; // Widget hala hayatta mı?
-
-    setState(() {
-      kasa += amount;
-      debugPrint("Kasa güncellendi: $kasa");
-    });
+    final inventoryManager =
+        Provider.of<InventoryManager>(context, listen: false);
+    inventoryManager.addKasa(amount);
+    // REMOVE setState here - handled by notifyListeners()
   }
 
   Future<void> _loadIcons() async {
@@ -556,7 +553,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 Text(
-                                  'Kasa: $kasa ',
+                                  'Kasa: ${Provider.of<InventoryManager>(context).kasa} TL', // Kasa buradan alınıyor
                                   style: const TextStyle(
                                     fontSize: 100,
                                     fontWeight: FontWeight.bold,
